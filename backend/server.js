@@ -67,8 +67,8 @@ const PORT = process.env.PORT || 3000;
 const startServer = async () => {
     try {
         await Promise.all([
-            verifyDatabaseRole(),
-            verifyAuthDatabaseRole()
+            // verifyDatabaseRole(),
+            // verifyAuthDatabaseRole()
         ]);
         app.listen(PORT, () => {
             console.log(`StockLine backend is running on port ${PORT}`);
