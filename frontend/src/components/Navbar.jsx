@@ -37,7 +37,7 @@ export const Navbar = ({ onResetData }) => {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xl font-bold tracking-tight text-white">
-                Stock<span className="text-indigo-400">Line</span> <span className="bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent text-lg font-black">KICKS</span>
+                Stock<span className="text-indigo-400">Wear</span> <span className="bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent text-lg font-black">KICKS</span>
               </span>
               <span className="hidden sm:inline-block rounded bg-orange-950/80 px-2 py-0.5 text-[10px] font-semibold text-orange-400 border border-orange-800/60 uppercase">
                 Footwear Retail

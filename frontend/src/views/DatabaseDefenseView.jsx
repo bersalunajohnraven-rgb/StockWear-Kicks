@@ -44,7 +44,7 @@ export const DatabaseDefenseView = () => {
           Database Engineering Defense Panel
         </h2>
         <p className="text-xs text-slate-400 max-w-3xl">
-          This panel documents every backend database engineering feature implemented in StockLine — intended for grader review and course project defense.
+          This panel documents every backend database engineering feature implemented in StockWear Kicks — intended for grader review and course project defense.
           All mechanisms run on the Supabase cloud Postgres instance.
         </p>
       </div>
@@ -183,7 +183,7 @@ CREATE POLICY manager_inventory_rls ON branch_inventory
             '<strong class="text-white">Database</strong>: PostgreSQL 15 on Supabase — zero-localhost requirement satisfied.',
             '<strong class="text-white">Backend API</strong>: Express.js + Prisma deployed to Render (free tier, auto-sleep disabled).',
             '<strong class="text-white">Frontend</strong>: React/Vite static build hosted on Vercel / Netlify CDN.',
-            'Environment separation: <code>stockline_app</code> (runtime role) vs <code>stockline_auth</code> (JWT/auth role) with least-privilege grants.',
+            'Environment separation: <code>stockwear_kicks_app</code> (runtime role) vs <code>stockwear_kicks_auth</code> (JWT/auth role) with least-privilege grants.',
             'Migrations managed via sequential SQL files (001–020) — reproducible schema from scratch.',
           ]}
         />

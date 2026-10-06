@@ -63,7 +63,7 @@ const LoginScreen = () => {
           </div>
           
           <h1 className="text-3xl font-black tracking-tight text-white">
-            StockLine <span className="bg-gradient-to-r from-orange-400 via-rose-400 to-amber-300 bg-clip-text text-transparent">KICKS</span>
+            StockWear <span className="bg-gradient-to-r from-orange-400 via-rose-400 to-amber-300 bg-clip-text text-transparent">KICKS</span>
           </h1>
           <p className="mt-1 text-xs text-slate-400">
             Multi-Branch Footwear Inventory, POS & Automated Restock System
@@ -85,7 +85,7 @@ const LoginScreen = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="staff@stockline.com"
+                placeholder="staff@stockwearkicks.com"
                 required
                 className="w-full rounded-xl border border-slate-700/80 bg-slate-950 px-4 py-3 text-sm text-white placeholder-slate-600 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all"
               />

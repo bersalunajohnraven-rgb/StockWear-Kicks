@@ -382,7 +382,7 @@ export const POSView = ({ currentUser, inventory = [], onProcessSale }) => {
           <div className="space-y-4">
             <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 font-mono text-xs text-slate-300 space-y-3">
               <div className="text-center border-b border-dashed border-slate-700 pb-3">
-                <h4 className="font-bold text-sm text-white">StockLine Retail Chain</h4>
+                <h4 className="font-bold text-sm text-white">StockWear Kicks Retail Chain</h4>
                 <p className="text-[11px] text-slate-400">{completedSale.branchName}</p>
                 <p className="text-[10px] text-slate-500">Trans ID: {completedSale.saleID}</p>
                 <p className="text-[10px] text-slate-500">{new Date(completedSale.created_at).toLocaleString()}</p>
