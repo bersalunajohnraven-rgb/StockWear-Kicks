@@ -4,14 +4,47 @@ const router = express.Router();
 
 const inventoryController = require('../controllers/inventoryController');
 
-router.get('/', inventoryController.getAllInventory);
+const { authenticateUser } = require('../middleware/authMiddleware');
+const { authorizeRoles } = require('../middleware/roleMiddleware');
 
-router.get('/:id', inventoryController.getInventoryById);
+// GET all inventory
+router.get(
+    '/',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager', 'cashier', 'inventory'),
+    inventoryController.getAllInventory
+);
 
-router.post('/', inventoryController.createInventory);
+// GET inventory by ID
+router.get(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager', 'cashier', 'inventory'),
+    inventoryController.getInventoryById
+);
 
-router.put('/:id', inventoryController.updateInventory);
+// CREATE inventory
+router.post(
+    '/',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager', 'inventory'),
+    inventoryController.createInventory
+);
 
-router.delete('/:id', inventoryController.deleteInventory);
+// UPDATE inventory
+router.put(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager', 'inventory'),
+    inventoryController.updateInventory
+);
+
+// DELETE inventory
+router.delete(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager', 'inventory'),
+    inventoryController.deleteInventory
+);
 
 module.exports = router;

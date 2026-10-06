@@ -1,4 +1,4 @@
-const express = require("express");
+const express = require('express');
 
 const router = express.Router();
 
@@ -8,12 +8,49 @@ const {
     createRestockRequest,
     updateRestockRequest,
     deleteRestockRequest
-} = require("../controllers/restockRequestController");
+} = require('../controllers/restockRequestController');
 
-router.get("/", getAllRestockRequests);
-router.get("/:id", getRestockRequestById);
-router.post("/", createRestockRequest);
-router.put("/:id", updateRestockRequest);
-router.delete("/:id", deleteRestockRequest);
+const { authenticateUser } = require('../middleware/authMiddleware');
+const { authorizeRoles } = require('../middleware/roleMiddleware');
+
+// GET all restock requests
+router.get(
+    '/',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    getAllRestockRequests
+);
+
+// GET restock request by ID
+router.get(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    getRestockRequestById
+);
+
+// CREATE restock request
+router.post(
+    '/',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    createRestockRequest
+);
+
+// UPDATE restock request
+router.put(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    updateRestockRequest
+);
+
+// DELETE restock request
+router.delete(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    deleteRestockRequest
+);
 
 module.exports = router;

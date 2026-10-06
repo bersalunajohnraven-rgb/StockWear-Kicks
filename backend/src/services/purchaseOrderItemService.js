@@ -1,6 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+const prisma = require('../db/prisma');
 
 const getAllPurchaseOrderItems = async () => {
     return await prisma.purchase_order_items.findMany({

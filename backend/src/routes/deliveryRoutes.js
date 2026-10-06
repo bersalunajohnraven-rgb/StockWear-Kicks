@@ -4,14 +4,47 @@ const router = express.Router();
 
 const deliveryController = require('../controllers/deliveryController');
 
-router.get('/', deliveryController.getAllDeliveries);
+const { authenticateUser } = require('../middleware/authMiddleware');
+const { authorizeRoles } = require('../middleware/roleMiddleware');
 
-router.get('/:id', deliveryController.getDeliveryById);
+// GET all deliveries
+router.get(
+    '/',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    deliveryController.getAllDeliveries
+);
 
-router.post('/', deliveryController.createDelivery);
+// GET delivery by ID
+router.get(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    deliveryController.getDeliveryById
+);
 
-router.put('/:id', deliveryController.updateDelivery);
+// CREATE delivery
+router.post(
+    '/',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    deliveryController.createDelivery
+);
 
-router.delete('/:id', deliveryController.deleteDelivery);
+// UPDATE delivery
+router.put(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    deliveryController.updateDelivery
+);
+
+// DELETE delivery
+router.delete(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    deliveryController.deleteDelivery
+);
 
 module.exports = router;

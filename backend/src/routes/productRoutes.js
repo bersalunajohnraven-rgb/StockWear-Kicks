@@ -4,14 +4,47 @@ const router = express.Router();
 
 const productController = require('../controllers/productController');
 
-router.get('/', productController.getAllProducts);
+const { authenticateUser } = require('../middleware/authMiddleware');
+const { authorizeRoles } = require('../middleware/roleMiddleware');
 
-router.get('/:id', productController.getProductById);
+// GET all products
+router.get(
+    '/',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager', 'cashier'),
+    productController.getAllProducts
+);
 
-router.post('/', productController.createProduct);
+// GET product by ID
+router.get(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager', 'cashier'),
+    productController.getProductById
+);
 
-router.put('/:id', productController.updateProduct);
+// CREATE product
+router.post(
+    '/',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    productController.createProduct
+);
 
-router.delete('/:id', productController.deleteProduct);
+// UPDATE product
+router.put(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    productController.updateProduct
+);
+
+// DELETE product
+router.delete(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    productController.deleteProduct
+);
 
 module.exports = router;

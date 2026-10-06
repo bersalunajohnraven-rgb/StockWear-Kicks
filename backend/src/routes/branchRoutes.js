@@ -4,14 +4,47 @@ const router = express.Router();
 
 const branchController = require('../controllers/branchController');
 
-router.get('/', branchController.getAllBranches);
+const { authenticateUser } = require('../middleware/authMiddleware');
+const { authorizeRoles } = require('../middleware/roleMiddleware');
 
-router.get('/:id', branchController.getBranchById);
+// GET all branches
+router.get(
+    '/',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    branchController.getAllBranches
+);
 
-router.post('/', branchController.createBranch);
+// GET branch by ID
+router.get(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    branchController.getBranchById
+);
 
-router.put('/:id', branchController.updateBranch);
+// CREATE branch
+router.post(
+    '/',
+    authenticateUser,
+    authorizeRoles('owner', 'admin'),
+    branchController.createBranch
+);
 
-router.delete('/:id', branchController.deleteBranch);
+// UPDATE branch
+router.put(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin'),
+    branchController.updateBranch
+);
+
+// DELETE branch
+router.delete(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin'),
+    branchController.deleteBranch
+);
 
 module.exports = router;
