@@ -136,7 +136,7 @@ export const BranchesView = ({ branches = [], users = [], onSaveBranch }) => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editing ? `Edit Branch: ${editing.name}` : 'Add New Branch'}
-        subtitle="Branches are the core data isolation unit in StockLine."
+        subtitle="Branches are the core data isolation unit in StockWear Kicks."
         maxWidth="max-w-md"
       >
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">

@@ -12,12 +12,13 @@ import {
   INITIAL_STOCK_MOVEMENTS
 } from './mockData';
 
-const STORAGE_KEY = 'stockline_shoes_db_v3';
+const STORAGE_KEY = 'stockwear_kicks_shoes_db_v1';
+const LEGACY_STORAGE_KEY = 'stockline_shoes_db_v3';
 
 // Helper to get local state or initialize
 const getStoredState = () => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
     if (raw) return JSON.parse(raw);
   } catch (e) {
     console.error('Error reading localStorage', e);
@@ -684,5 +685,15 @@ export const apiClient = {
       adjData.reason || 'manual_adjustment',
       user || adjData._user
     );
+  },
+
+  // Reset local state to initial mock data
+  resetState: () => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
+    } catch (e) {
+      console.error('Error resetting state', e);
+    }
   },
 };

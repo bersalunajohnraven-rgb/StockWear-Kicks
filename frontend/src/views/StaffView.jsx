@@ -228,7 +228,7 @@ export const StaffView = ({ users = [], branches = [], currentUser, onSaveUser }
             <label className="block text-slate-400 mb-1 font-medium">Email Address</label>
             <input type="email" value={form.email}
               onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
-              required placeholder="maria@stockline.ph"
+              required placeholder="maria@stockwearkicks.ph"
               className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white placeholder-slate-600 focus:border-indigo-500 focus:outline-none"
             />
           </div>
