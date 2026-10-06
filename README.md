@@ -1,10 +1,10 @@
-# StockLine Footwear & Kicks — Multi-Branch Retail Inventory and POS Management System
+## StockWear Kicks — Multi-Branch Retail Inventory and POS Management System
 
 Advanced Database Systems course project.
 
 ## Overview
 
-**StockLine Footwear & Kicks** is a database-backed multi-branch retail inventory, Point of Sale (POS), and supply chain management system tailored specifically for footwear and sneaker retail operations. It centralizes product catalogs, cross-branch shelf stock, cashier sales, vendor purchasing, and delivery records while keeping each branch's stock separately isolated and traceable.
+**StockWear Kicks** is a database-backed multi-branch retail inventory, Point of Sale (POS), and supply chain management system tailored specifically for footwear and sneaker retail operations. It centralizes product catalogs, cross-branch shelf stock, cashier sales, vendor purchasing, and delivery records while keeping each branch's stock separately isolated and traceable.
 
 The system prevents stockouts and over-selling by:
 - Monitoring shoe inventory levels against branch reorder thresholds.

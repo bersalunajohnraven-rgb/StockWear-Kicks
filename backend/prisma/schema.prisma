@@ -8,6 +8,7 @@ datasource db {
 }
 
 
+
 model branch {
   branchID         String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name             String             @db.VarChar
