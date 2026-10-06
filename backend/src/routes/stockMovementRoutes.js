@@ -4,10 +4,47 @@ const router = express.Router();
 
 const stockMovementController = require('../controllers/stockMovementController');
 
-router.get('/', stockMovementController.getAllStockMovements);
-router.get('/:id', stockMovementController.getStockMovementById);
-router.post('/', stockMovementController.createStockMovement);
-router.put('/:id', stockMovementController.updateStockMovement);
-router.delete('/:id', stockMovementController.deleteStockMovement);
+const { authenticateUser } = require('../middleware/authMiddleware');
+const { authorizeRoles } = require('../middleware/roleMiddleware');
+
+// GET all stock movements
+router.get(
+    '/',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager', 'cashier'),
+    stockMovementController.getAllStockMovements
+);
+
+// GET stock movement by ID
+router.get(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager', 'cashier'),
+    stockMovementController.getStockMovementById
+);
+
+// CREATE stock movement
+router.post(
+    '/',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    stockMovementController.createStockMovement
+);
+
+// UPDATE stock movement
+router.put(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    stockMovementController.updateStockMovement
+);
+
+// DELETE stock movement
+router.delete(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    stockMovementController.deleteStockMovement
+);
 
 module.exports = router;

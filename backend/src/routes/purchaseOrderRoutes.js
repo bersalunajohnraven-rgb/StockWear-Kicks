@@ -4,14 +4,47 @@ const router = express.Router();
 
 const purchaseOrderController = require('../controllers/purchaseOrderController');
 
-router.get('/', purchaseOrderController.getAllPurchaseOrders);
+const { authenticateUser } = require('../middleware/authMiddleware');
+const { authorizeRoles } = require('../middleware/roleMiddleware');
 
-router.get('/:id', purchaseOrderController.getPurchaseOrderById);
+// GET all purchase orders
+router.get(
+    '/',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    purchaseOrderController.getAllPurchaseOrders
+);
 
-router.post('/', purchaseOrderController.createPurchaseOrder);
+// GET purchase order by ID
+router.get(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    purchaseOrderController.getPurchaseOrderById
+);
 
-router.put('/:id', purchaseOrderController.updatePurchaseOrder);
+// CREATE purchase order
+router.post(
+    '/',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    purchaseOrderController.createPurchaseOrder
+);
 
-router.delete('/:id', purchaseOrderController.deletePurchaseOrder);
+// UPDATE purchase order
+router.put(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    purchaseOrderController.updatePurchaseOrder
+);
+
+// DELETE purchase order
+router.delete(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    purchaseOrderController.deletePurchaseOrder
+);
 
 module.exports = router;

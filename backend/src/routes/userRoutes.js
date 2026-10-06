@@ -4,14 +4,47 @@ const router = express.Router();
 
 const userController = require('../controllers/userController');
 
-router.get('/', userController.getAllUsers);
+const { authenticateUser } = require('../middleware/authMiddleware');
+const { authorizeRoles } = require('../middleware/roleMiddleware');
 
-router.get('/:id', userController.getUserById);
+// GET all users
+router.get(
+    '/',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    userController.getAllUsers
+);
 
-router.post('/', userController.createUser);
+// GET user by ID
+router.get(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    userController.getUserById
+);
 
-router.put('/:id', userController.updateUser);
+// CREATE user
+router.post(
+    '/',
+    authenticateUser,
+    authorizeRoles('owner', 'admin'),
+    userController.createUser
+);
 
-router.delete('/:id', userController.deleteUser);
+// UPDATE user
+router.put(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin'),
+    userController.updateUser
+);
+
+// DELETE user
+router.delete(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin'),
+    userController.deleteUser
+);
 
 module.exports = router;

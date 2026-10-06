@@ -1,4 +1,5 @@
 const userService = require('../services/userService');
+const { hashPassword, isValidPassword } = require('../services/authService');
 
 const getAllUsers = async (req, res) => {
     try {
@@ -43,17 +44,24 @@ const createUser = async (req, res) => {
             middleName,
             lastName,
             email,
-            password_hash,
+            password,
             roleID,
             branchID
         } = req.body;
 
-        if (!firstName || !middleName || !lastName || !email || !password_hash || !roleID) {
+        if (!firstName || !lastName || !email || !password || !roleID) {
             return res.status(400).json({
-                message: 'firstName, middleName, lastName, email, password_hash, and roleID are required'
+                message: 'firstName, lastName, email, password, and roleID are required'
             });
         }
 
+        if (!isValidPassword(password)) {
+            return res.status(400).json({
+                message: 'Password must be at least 12 characters and no more than 72 UTF-8 bytes'
+            });
+        }
+
+        const password_hash = await hashPassword(password);
         const user = await userService.createUser({
             firstName,
             middleName,
@@ -83,11 +91,20 @@ const updateUser = async (req, res) => {
             middleName,
             lastName,
             email,
-            password_hash,
+            password,
             roleID,
             branchID
         } = req.body;
 
+        if (password !== undefined && !isValidPassword(password)) {
+            return res.status(400).json({
+                message: 'Password must be at least 12 characters and no more than 72 UTF-8 bytes'
+            });
+        }
+
+        const password_hash = password === undefined
+            ? undefined
+            : await hashPassword(password);
         const user = await userService.updateUser(id, {
             firstName,
             middleName,

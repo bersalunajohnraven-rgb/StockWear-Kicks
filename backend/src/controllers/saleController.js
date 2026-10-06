@@ -3,7 +3,7 @@ const saleService = require('../services/saleService');
 
 const getAllSales = async (req, res) => {
     try {
-        const sales = await saleService.getAllSales();
+        const sales = await saleService.getAllSales(req.user);
 
         res.status(200).json(sales);
     } catch (error) {
@@ -20,7 +20,7 @@ const getSaleById = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const sale = await saleService.getSaleById(id);
+        const sale = await saleService.getSaleById(id, req.user);
 
         if (!sale) {
             return res.status(404).json({
@@ -41,7 +41,7 @@ const getSaleById = async (req, res) => {
 
 const createSale = async (req, res) => {
     try {
-        const sale = await saleService.createSale(req.body);
+        const sale = await saleService.createSale(req.body, req.user);
 
         res.status(201).json(sale);
     } catch (error) {
@@ -58,7 +58,13 @@ const updateSale = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const sale = await saleService.updateSale(id, req.body);
+        const sale = await saleService.updateSale(id, req.body, req.user);
+
+        if (!sale) {
+            return res.status(404).json({
+                message: 'Sale not found'
+            });
+        }
 
         res.status(200).json(sale);
     } catch (error) {
@@ -75,7 +81,13 @@ const deleteSale = async (req, res) => {
     try {
         const { id } = req.params;
 
-        await saleService.deleteSale(id);
+        const deleted = await saleService.deleteSale(id, req.user);
+
+        if (!deleted) {
+            return res.status(404).json({
+                message: 'Sale not found'
+            });
+        }
 
         res.status(200).json({
             message: 'Sale deleted successfully'

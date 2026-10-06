@@ -4,14 +4,47 @@ const router = express.Router();
 
 const supplierController = require('../controllers/supplierController');
 
-router.get('/', supplierController.getAllSuppliers);
+const { authenticateUser } = require('../middleware/authMiddleware');
+const { authorizeRoles } = require('../middleware/roleMiddleware');
 
-router.get('/:id', supplierController.getSupplierById);
+// GET all suppliers
+router.get(
+    '/',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    supplierController.getAllSuppliers
+);
 
-router.post('/', supplierController.createSupplier);
+// GET supplier by ID
+router.get(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin', 'branch_manager'),
+    supplierController.getSupplierById
+);
 
-router.put('/:id', supplierController.updateSupplier);
+// CREATE supplier
+router.post(
+    '/',
+    authenticateUser,
+    authorizeRoles('owner', 'admin'),
+    supplierController.createSupplier
+);
 
-router.delete('/:id', supplierController.deleteSupplier);
+// UPDATE supplier
+router.put(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin'),
+    supplierController.updateSupplier
+);
+
+// DELETE supplier
+router.delete(
+    '/:id',
+    authenticateUser,
+    authorizeRoles('owner', 'admin'),
+    supplierController.deleteSupplier
+);
 
 module.exports = router;
