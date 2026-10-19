@@ -29,19 +29,34 @@ const getPurchaseOrderById = async (orderID) => {
 };
 
 const createPurchaseOrder = async (data) => {
+    const itemsData = (data.items || []).map(it => ({
+        productID: it.productID,
+        quantity_ordered: parseInt(it.quantity_ordered, 10),
+        unit_cost: parseFloat(it.unit_cost || 0)
+    }));
+
     return await prisma.purchase_orders.create({
         data: {
             supplierID: data.supplierID,
             branchID: data.branchID,
             requestID: data.requestID || null,
             status: data.status || 'open',
-            created_by: data.created_by
+            created_by: data.created_by,
+            ...(itemsData.length > 0 ? {
+                purchase_order_items: {
+                    create: itemsData
+                }
+            } : {})
         },
         include: {
             suppliers: true,
             branch: true,
             users: true,
-            purchase_order_items: true
+            purchase_order_items: {
+                include: {
+                    products: true
+                }
+            }
         }
     });
 };

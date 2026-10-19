@@ -23,7 +23,17 @@ const login = async (req, res) => {
         return res.status(200).json({
             accessToken,
             tokenType: 'Bearer',
-            expiresIn: authService.ACCESS_TOKEN_LIFETIME_SECONDS
+            expiresIn: authService.ACCESS_TOKEN_LIFETIME_SECONDS,
+            user: {
+                userID: user.userID,
+                email: user.email,
+                firstName: user.firstName,
+                middleName: user.middleName,
+                lastName: user.lastName,
+                role_name: user.roleName,
+                branchID: user.branchID,
+                branchName: user.branchName
+            }
         });
     } catch (error) {
         console.error('Login error:', error);
