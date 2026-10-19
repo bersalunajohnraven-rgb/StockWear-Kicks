@@ -11,43 +11,54 @@ The system prevents stockouts and over-selling by:
 - Generating automated restock requests when stock drops below threshold.
 - Providing a fast, dedicated Sneaker Point-of-Sale (POS) terminal for store cashiers.
 - Recording complete stock movement audit trails for sales, shipments, and manual adjustments.
-- Utilizing row-level concurrency protection and ACID transactions during multi-item checkouts.
+- Utilizing row-level concurrency protection (`SELECT ... FOR UPDATE`) and ACID transactions during multi-item checkouts.
+- Enforcing branch isolation and role privileges through PostgreSQL Row-Level Security (RLS) policies and JWT-based Role-Based Access Control (RBAC).
 
 ---
 
 ## Getting Started & Running the Application
 
 ### 1. Prerequisites
-- Node.js (v18 or higher recommended)
-- npm
+- **Node.js**: v18 or higher recommended (v20+ supported)
+- **npm**: v9 or higher
+- **PostgreSQL / Supabase instance**: Cloud PostgreSQL instance configured with schema migrations
 
-### 2. Frontend Setup (React + Vite)
+### 2. Backend Setup (Node.js + Express 5 + Prisma 6)
 ```bash
-# Navigate to the frontend directory
-cd frontend
-
-# Install dependencies (if not already installed)
-npm install
-
-# Start the Vite development server
-npm run dev
-```
-Open your browser at **[http://localhost:5173](http://localhost:5173)**.
-
-### 3. Backend Setup (Node.js + Express + Prisma)
-```bash
-# In a separate terminal, navigate to the backend directory
+# Navigate to the backend directory
 cd backend
 
 # Install dependencies
 npm install
 
-# Generate Prisma client & start the server
+# Configure environment variables in backend/.env:
+# DATABASE_URL="postgresql://..."
+# AUTH_DATABASE_URL="postgresql://..."
+# JWT_SECRET="..."
+# SEED_ADMIN_PASSWORD="admin123"
+
+# (Optional) Seed initial roles, branch, supplier, product, and admin account
+npm run seed
+
+# Start the backend server
 npm run dev
 ```
 The backend server runs on `http://localhost:3000` (or the port defined in `backend/.env`).
 
-> **Note**: If the backend server is offline or still starting up, the frontend automatically falls back to local authenticated state, allowing complete end-to-end evaluation of the UI, POS terminal, and inventory management features.
+### 3. Frontend Setup (React 19 + Vite 8 + Tailwind CSS v4)
+```bash
+# In a separate terminal, navigate to the frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start the Vite development server with API proxying
+npm run dev
+```
+Open your browser at **[http://localhost:5173](http://localhost:5173)**. Requests to `/api/*` are automatically proxied to `http://localhost:3000`.
+
+> **Important**: The backend API must be running for staff authentication and live operational data. If the backend is unreachable, the login screen will notify you that the backend is offline.
 
 ---
 
@@ -55,18 +66,20 @@ The backend server runs on `http://localhost:3000` (or the port defined in `back
 
 Authentication is required to access the system. Each account is assigned a specific role and branch scope:
 
-| Role | Name | Email Address | Password | Branch Scope & Access Level |
+| Role | Name | Email Address | Default Password | Branch Scope & Access Level |
 |---|---|---|---|---|
-| **Store Owner** | Eleanor Vance | `admin@stockline.com` | `admin123` | Regional executive access across all branches, global catalog editing, and PO approval |
-| **Branch Manager** | Marcus Holloway | `manager.main@stockline.com` | `manager123` | Main Branch (Tagbilaran) inventory, low-stock alerts, restock requests, and delivery receipts |
-| **Branch Manager** | Chloe Tan | `manager.panglao@stockline.com` | `manager123` | Panglao Hub Branch inventory, branch sales logs, and restock requests |
-| **Store Cashier** | Juan Cruz | `cashier@stockline.com` | `cashier123` | Sneaker Point-of-Sale (POS) register and branch sales receipts |
+| **Store Owner / Regional Admin** | Eleanor Vance | `admin@stockwearkicks.com` | `admin123` | Global executive access across all branches, catalog editing, restock approval, and database defense panel |
+| **Branch Manager** | Marcus Holloway | `manager.main@stockwearkicks.com` | `manager123` | Main Branch (Tagbilaran) inventory, low-stock alerts, restock requests, and delivery receipts |
+| **Branch Manager** | Chloe Tan | `manager.panglao@stockwearkicks.com` | `manager123` | Panglao Hub Branch inventory, branch sales logs, and restock requests |
+| **Store Cashier** | Juan Cruz | `cashier@stockwearkicks.com` | `cashier123` | Sneaker Point-of-Sale (POS) terminal, register checkout, and personal sales receipts |
+
+> **Note**: Running `npm run seed` in `backend/` creates the initial Store Owner account (`admin@stockwearkicks.com`) using `SEED_ADMIN_PASSWORD` from `backend/.env`. Additional staff and branch managers can be created through the **Staff Accounts & Roles** view.
 
 ---
 
 ## Core Features & Modules
 
-### 👟 Sneaker & Footwear Catalog
+### 👟 Sneaker & Footwear Catalog (`ProductsView`)
 - Master footwear catalog with unique SKU identification, supplier unit cost, and retail selling price.
 - Pre-seeded with iconic footwear models and sizes across categories:
   - **Basketball**: *Nike Air Jordan 1 Retro High 'Chicago' (US 10.5)*, *Puma MB.03 LaMelo Ball 'Toxic' (US 10)*
@@ -75,56 +88,92 @@ Authentication is required to access the system. Each account is assigned a spec
   - **Casual / Canvas**: *Converse Chuck 70 Vintage Canvas High Top (US 8.5)*
   - **Skateboarding**: *Vans Old Skool Pro Classic (US 9.5)*
 
-### 💳 Sneaker Point of Sale (POS) Terminal
+### 💳 Sneaker Point of Sale (POS) Terminal (`POSView`)
 - Fast cashier sales terminal designed for retail shoe store checkout.
 - Category filter chips (`All`, `Basketball`, `Lifestyle`, `Running`, `Skateboarding`, `Casual / Canvas`).
 - Real-time shelf stock counter per branch (`X pairs in stock`) with automated stockout prevention.
 - Cart order summary with subtotal calculation, 12% VAT breakdown, cash tendered input, and change calculator.
 - Digital sales receipt modal with cashier and branch timestamp tracking.
 
-### 📦 Multi-Branch Inventory Tracking & Restock Triggers
+### 📦 Multi-Branch Inventory Tracking & Restock Triggers (`InventoryView`)
 - Real-time stock counts across multiple store branches (Tagbilaran Main Branch, Panglao Hub, Tubigon Outlet).
 - Automated restock request generation when shelf quantity falls below reorder thresholds.
 - Cross-branch manual adjustments with audit reason logging.
 
-### 🚚 Suppliers, Purchase Orders & Receiving
-- Footwear vendor logistics tracking (Nike Philippines Distribution, Adidas Pacific Supply, Puma & New Balance Hub).
-- Multi-item Purchase Orders linked to branch restock requests.
-- Delivery receiving verification that increments physical branch inventory and logs stock movements.
+### 📊 Executive & Branch Dashboards (`AdminDashboard`, `ManagerDashboard`)
+- **Executive Hub (Owner/Admin)**: Consolidated KPIs across all branches, gross revenue, total pairs on shelf, critical low-stock alerts, and central restock approval queue.
+- **Store Hub (Branch Manager)**: Branch-specific metrics, local inventory levels, restock status, and daily register summary.
 
-### 📜 Stock Movement Audit Trail
+### 📋 Restock Requests & Purchase Orders (`PurchaseOrdersView`)
+- Multi-item Purchase Orders linked to branch restock requests and supplier distributor profiles.
+- Automated creation when branch inventory dips below threshold, with owner authorization workflow.
+
+### 🚚 Footwear Shipments & Deliveries (`DeliveriesView`)
+- Delivery receiving verification that increments physical branch inventory and logs stock movements.
+- Automatic matching and reconciliation with open Purchase Orders.
+
+### 🏭 Footwear Suppliers Management (`SuppliersView`)
+- Directory of authorized footwear distributors (Nike Philippines Distribution, Adidas Pacific Supply, Puma & New Balance Hub).
+- Supplier contacts, order history, and active procurement links.
+
+### 🏬 Store Branches & Outlets (`BranchesView`)
+- Multi-outlet configuration including address, contact information, and branch-specific inventory partitions.
+
+### 👥 Staff Accounts & Roles (`StaffView`)
+- Role-Based Access Control (RBAC) management mapping staff members to system roles (`owner`, `admin`, `branch_manager`, `cashier`) and branch assignments.
+
+### 📜 Stock Movement Audit Trail (`AuditTrailView`)
 - Complete immutable history of all inventory modifications (Sales, Deliveries, and Manual Adjustments).
 - Tracks exact quantity delta, reference document ID, actor name, and timestamp.
+
+### 🧾 Consolidated Sales History (`SalesHistoryView`)
+- Historical sales transactions filtered by branch, cashier, and date with line-item detail breakdowns.
+
+### 🛡️ Database Engineering Defense Panel (`DatabaseDefenseView`)
+Dedicated technical defense console designed for academic course project evaluation and grader inspection:
+- **3rd Normal Form (3NF) Normalization**: Elimination of repeating groups and transitive dependencies across `products`, `branch_inventory`, `sales`, and `purchase_orders`.
+- **Server-Side PL/pgSQL Triggers**:
+  - `trigger_deduct_stock_on_sale`: Atomically decrements `branch_inventory.quantity` on `sale_items` insertion.
+  - `trigger_increment_stock_on_delivery`: Automatically increments shelf stock and closes fulfilled Purchase Orders.
+  - `trigger_log_stock_movement`: Records audit rows in `stock_movements` on any inventory quantity shift.
+- **Stored Procedures**: Procedural logic including `sp_process_sale`, `sp_request_restock`, and `sp_approve_purchase_order` with `BEGIN / EXCEPTION / ROLLBACK` transaction atomicity.
+- **Row-Level Concurrency Locking**: `SELECT ... FOR UPDATE` row locks preventing overselling or negative inventory under simultaneous cashier checkouts.
+- **PostgreSQL Row-Level Security (RLS)**: Enforces branch isolation so branch managers and cashiers can only access records scoped to their assigned outlet.
+- **Query Optimization & Indexing**: Optimized indexes (`idx_inv_branch`, `idx_sales_branch`, `idx_mvmt_product`) eliminating sequential scans, verified via `EXPLAIN ANALYZE`.
 
 ---
 
 ## Tech Stack
 
-- **Frontend**: React 18, Vite, Tailwind CSS, Lucide React Icons
-- **Backend**: Node.js, Express.js, Prisma ORM
-- **Database**: PostgreSQL / Supabase Cloud
+- **Frontend**: React 19, Vite 8, Tailwind CSS v4, Lucide React Icons, Oxlint
+- **Backend**: Node.js, Express.js 5, Prisma ORM 6
+- **Database**: PostgreSQL 15 (Supabase Cloud)
 - **Security**: JWT Authentication, Bcrypt Password Hashing, Role-Based Access Control (RBAC), PostgreSQL Row-Level Security (RLS)
 
 ---
 
-## Database Architecture
+## Database Architecture & Migrations
 
-The complete schema is available in [`migrations/001_init_schema.sql`](./migrations/001_init_schema.sql), with the Prisma representation in [`backend/prisma/schema.prisma`](./backend/prisma/schema.prisma).
+The database migrations are located in the [`migrations/`](./migrations) directory:
 
-The database is normalized into the following entities:
+- `001_create_branch.sql` — Store outlet entities
+- `001_init_schema.sql` — Complete consolidated initial schema
+- `002_create_roles.sql` — Role definitions (`owner`, `admin`, `branch_manager`, `cashier`)
+- `003_create_users.sql` — Staff user profiles mapped to roles and branches
+- `004_create_suppliers.sql` — Footwear brand distributors
+- `005_create_products.sql` — Product catalog with unique SKUs and pricing
+- `006_create_inventory.sql` — Branch-specific stock levels and reorder thresholds
+- `007_create_restock_requests.sql` — Automated and manual replenishment tickets
+- `008_create_purchase_orders.sql` — Vendor purchase orders
+- `009_create_purchase_order_items.sql` — Purchase order line items
+- `010_create_deliveries.sql` — Shipment receiving headers
+- `011_create_delivery_item.sql` — Delivery line items
+- `012_create_sales.sql` — Register sales transactions
+- `013_create_sale_items.sql` — Individual footwear sale line items
+- `014_create_stock_movements.sql` — Immutable stock audit trail
+- `015_security_rbac.sql` — PostgreSQL Row-Level Security (RLS) policies and least-privilege database roles
 
-- `roles` — System roles (`owner`, `admin`, `branch_manager`, `cashier`)
-- `branch` — Physical store outlet locations
-- `users` — Authenticated staff members mapped to roles and branches
-- `products` — Footwear models identified by unique SKU codes
-- `inventory` — Product quantities and reorder thresholds per branch
-- `sales` & `sale_items` — Completed sales register transactions and line items
-- `suppliers` — Footwear brand distributors and contact information
-- `purchase_orders` & `purchase_order_items` — Replenishment orders placed with suppliers
-- `deliveries` & `delivery_item` — Received vendor shipments and line items
-- `restock_requests` — Triggered or manually requested replenishment requests
-- `stock_movements` — Comprehensive stock audit trail entries
-- `audit_logs` — Before-and-after audit history for database updates
+Prisma schema mappings are maintained in [`backend/prisma/schema.prisma`](./backend/prisma/schema.prisma).
 
 ---
 
@@ -135,3 +184,5 @@ Apply [`migrations/015_security_rbac.sql`](./migrations/015_security_rbac.sql) w
 - `stockline_auth` can only read credential and role fields needed for authentication.
 - `stockline_app` enforces branch isolation policies and write permissions based on staff roles.
 - Users authenticate via `POST /api/auth/login` using `{ "email": "...", "password": "..." }`, returning a signed JWT bearer token.
+- Protected API routes verify the JWT token via `authenticateUser` and check permissions with `authorizeRoles(...)`.
+

@@ -11,7 +11,7 @@ const { authorizeRoles } = require('../middleware/roleMiddleware');
 router.get(
     '/',
     authenticateUser,
-    authorizeRoles('owner', 'admin', 'branch_manager'),
+    authorizeRoles('owner', 'admin', 'branch_manager', 'cashier'),
     branchController.getAllBranches
 );
 
@@ -19,7 +19,7 @@ router.get(
 router.get(
     '/:id',
     authenticateUser,
-    authorizeRoles('owner', 'admin', 'branch_manager'),
+    authorizeRoles('owner', 'admin', 'branch_manager', 'cashier'),
     branchController.getBranchById
 );
 

@@ -1,10 +1,13 @@
+require('dotenv').config();
+
+const express = require('express');
+const cors = require('cors');
+
 const { authenticateUser } = require('./src/middleware/authMiddleware');
 const { authorizeRoles } = require('./src/middleware/roleMiddleware');
 const prisma = require('./src/db/prisma');
 const { verifyDatabaseRole } = require('./src/db/verifyDatabaseRole');
 const { verifyAuthDatabaseRole } = require('./src/services/authService');
-
-const express = require('express');
 
 const productRoutes = require('./src/routes/productRoutes');
 const inventoryRoutes = require('./src/routes/inventoryRoutes');
@@ -18,11 +21,20 @@ const deliveryRoutes = require('./src/routes/deliveryRoutes');
 const deliveryItemRoutes = require('./src/routes/deliveryItemRoutes');
 const stockMovementRoutes = require('./src/routes/stockMovementRoutes');
 const saleRoutes = require('./src/routes/saleRoutes');
-const saleItemRoutes = require("./src/routes/saleItemRoutes");
-const restockRequestRoutes = require("./src/routes/restockRequestRoutes");
+const saleItemRoutes = require('./src/routes/saleItemRoutes');
+const restockRequestRoutes = require('./src/routes/restockRequestRoutes');
 const authRoutes = require('./src/routes/authRoutes');
 
 const app = express();
+
+// CORS must come before the routes
+app.use(
+    cors({
+        origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization']
+    })
+);
 
 app.use(express.json());
 
@@ -39,8 +51,8 @@ app.use('/api/deliveries', deliveryRoutes);
 app.use('/api/delivery-items', deliveryItemRoutes);
 app.use('/api/stock-movements', stockMovementRoutes);
 app.use('/api/sales', saleRoutes);
-app.use("/api/sale-items", saleItemRoutes);
-app.use("/api/restock-requests", restockRequestRoutes);
+app.use('/api/sale-items', saleItemRoutes);
+app.use('/api/restock-requests', restockRequestRoutes);
 
 app.get(
     '/api/test-auth',
@@ -55,10 +67,17 @@ app.get(
     }
 );
 
-
 app.get('/', (req, res) => {
     res.json({
         message: 'StockLine backend is running!'
+    });
+});
+
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        service: 'StockWear Kicks API',
+        timestamp: new Date().toISOString()
     });
 });
 

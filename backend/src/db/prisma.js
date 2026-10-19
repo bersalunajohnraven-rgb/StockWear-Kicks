@@ -1,3 +1,4 @@
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 const { PrismaClient } = require('@prisma/client');
 const { getDatabaseContext } = require('./databaseContext');
 
@@ -35,6 +36,9 @@ const prisma = basePrisma.$extends({
                     }
 
                     return delegate[operation](args);
+                }, {
+                    maxWait: 20000,
+                    timeout: 30000
                 });
             }
         }

@@ -1,11 +1,18 @@
 const userService = require('../services/userService');
 const { hashPassword, isValidPassword } = require('../services/authService');
+const prisma = require('../db/prisma');
 
 const getAllUsers = async (req, res) => {
     try {
         const users = await userService.getAllUsers();
+        const formatted = users.map(u => ({
+            ...u,
+            full_name: `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+            role_name: u.roles?.role_name || 'cashier',
+            branchName: u.branch?.name || 'All Branches (Consolidated)'
+        }));
 
-        res.status(200).json(users);
+        res.status(200).json(formatted);
     } catch (error) {
         console.error(error);
 
@@ -27,7 +34,12 @@ const getUserById = async (req, res) => {
             });
         }
 
-        res.status(200).json(user);
+        res.status(200).json({
+            ...user,
+            full_name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+            role_name: user.roles?.role_name || 'cashier',
+            branchName: user.branch?.name || 'All Branches (Consolidated)'
+        });
     } catch (error) {
         console.error(error);
 
@@ -43,41 +55,68 @@ const createUser = async (req, res) => {
             firstName,
             middleName,
             lastName,
+            full_name,
             email,
             password,
             roleID,
+            role_name,
             branchID
         } = req.body;
 
-        if (!firstName || !lastName || !email || !password || !roleID) {
+        let resolvedFirstName = firstName;
+        let resolvedLastName = lastName;
+        if (!resolvedFirstName && full_name) {
+            const parts = full_name.trim().split(/\s+/);
+            resolvedFirstName = parts[0] || 'User';
+            resolvedLastName = parts.slice(1).join(' ') || 'Staff';
+        }
+
+        let resolvedRoleID = roleID;
+        if (!resolvedRoleID) {
+            const targetRoleName = role_name || 'cashier';
+            const roleRecord = await prisma.roles.findUnique({
+                where: { role_name: targetRoleName }
+            });
+            if (roleRecord) {
+                resolvedRoleID = roleRecord.roleID;
+            }
+        }
+
+        if (!resolvedFirstName || !resolvedLastName || !email || !password || !resolvedRoleID) {
             return res.status(400).json({
-                message: 'firstName, lastName, email, password, and roleID are required'
+                message: 'Name, email, password, and valid role are required'
             });
         }
 
         if (!isValidPassword(password)) {
             return res.status(400).json({
-                message: 'Password must be at least 12 characters and no more than 72 UTF-8 bytes'
+                message: 'Password must be at least 6 characters and no more than 72 UTF-8 bytes'
             });
         }
 
         const password_hash = await hashPassword(password);
         const user = await userService.createUser({
-            firstName,
-            middleName,
-            lastName,
+            firstName: resolvedFirstName,
+            middleName: middleName || null,
+            lastName: resolvedLastName,
             email,
             password_hash,
-            roleID,
-            branchID
+            roleID: resolvedRoleID,
+            branchID: branchID || null
         });
 
-        res.status(201).json(user);
+        res.status(201).json({
+            ...user,
+            full_name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+            role_name: user.roles?.role_name,
+            branchName: user.branch?.name || 'All Branches'
+        });
     } catch (error) {
         console.error(error);
 
         res.status(500).json({
-            message: 'Failed to create user'
+            message: 'Failed to create user',
+            error: error.message
         });
     }
 };
@@ -90,37 +129,64 @@ const updateUser = async (req, res) => {
             firstName,
             middleName,
             lastName,
+            full_name,
             email,
             password,
             roleID,
+            role_name,
             branchID
         } = req.body;
 
-        if (password !== undefined && !isValidPassword(password)) {
+        let resolvedFirstName = firstName;
+        let resolvedLastName = lastName;
+        if (!resolvedFirstName && full_name) {
+            const parts = full_name.trim().split(/\s+/);
+            resolvedFirstName = parts[0];
+            resolvedLastName = parts.slice(1).join(' ') || '';
+        }
+
+        let resolvedRoleID = roleID;
+        if (!resolvedRoleID && role_name) {
+            const roleRecord = await prisma.roles.findUnique({
+                where: { role_name }
+            });
+            if (roleRecord) {
+                resolvedRoleID = roleRecord.roleID;
+            }
+        }
+
+        if (password !== undefined && password !== '' && !isValidPassword(password)) {
             return res.status(400).json({
-                message: 'Password must be at least 12 characters and no more than 72 UTF-8 bytes'
+                message: 'Password must be at least 6 characters and no more than 72 UTF-8 bytes'
             });
         }
 
-        const password_hash = password === undefined
-            ? undefined
-            : await hashPassword(password);
+        const password_hash = (password !== undefined && password !== '')
+            ? await hashPassword(password)
+            : undefined;
+
         const user = await userService.updateUser(id, {
-            firstName,
-            middleName,
-            lastName,
-            email,
-            password_hash,
-            roleID,
-            branchID
+            ...(resolvedFirstName !== undefined ? { firstName: resolvedFirstName } : {}),
+            ...(middleName !== undefined ? { middleName } : {}),
+            ...(resolvedLastName !== undefined ? { lastName: resolvedLastName } : {}),
+            ...(email !== undefined ? { email } : {}),
+            ...(password_hash !== undefined ? { password_hash } : {}),
+            ...(resolvedRoleID !== undefined ? { roleID: resolvedRoleID } : {}),
+            branchID: branchID !== undefined ? (branchID || null) : undefined
         });
 
-        res.status(200).json(user);
+        res.status(200).json({
+            ...user,
+            full_name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+            role_name: user.roles?.role_name,
+            branchName: user.branch?.name || 'All Branches'
+        });
     } catch (error) {
         console.error(error);
 
         res.status(500).json({
-            message: 'Failed to update user'
+            message: 'Failed to update user',
+            error: error.message
         });
     }
 };
