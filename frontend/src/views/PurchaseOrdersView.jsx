@@ -102,7 +102,7 @@ export const PurchaseOrdersView = ({
                 {restockRequests.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="py-12 text-center text-slate-500">
-                      No restock requests generated yet.
+                      No data yet. No restock requests generated yet.
                     </td>
                   </tr>
                 ) : (
@@ -189,7 +189,7 @@ export const PurchaseOrdersView = ({
                 {purchaseOrders.length === 0 ? (
                   <tr>
                     <td colSpan="7" className="py-12 text-center text-slate-500">
-                      No purchase orders registered.
+                      No data yet. No purchase orders registered.
                     </td>
                   </tr>
                 ) : (
