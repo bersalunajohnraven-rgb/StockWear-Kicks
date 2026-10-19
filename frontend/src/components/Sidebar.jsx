@@ -10,7 +10,9 @@ import {
   Users, 
   History, 
   ArrowDownToLine,
-  CreditCard
+  CreditCard,
+  Factory,
+  Shield
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -27,10 +29,12 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
         { id: 'products', label: 'Sneaker & Shoe Catalog', icon: Package },
         { id: 'purchase-orders', label: 'Restock & Purchase Orders', icon: ClipboardList },
         { id: 'deliveries', label: 'Footwear Shipments', icon: Truck },
+        { id: 'suppliers', label: 'Footwear Suppliers', icon: Factory },
         { id: 'sales-history', label: 'Consolidated Sales', icon: ShoppingCart },
         { id: 'branches', label: 'Footwear Outlets', icon: Building2 },
         { id: 'staff', label: 'Staff Accounts & Roles', icon: Users },
-        { id: 'audit-trail', label: 'Stock Movements (Audit)', icon: History }
+        { id: 'audit-trail', label: 'Stock Movements (Audit)', icon: History },
+        { id: 'database-defense', label: 'DB Engineering Defense', icon: Shield }
       ];
     }
 
@@ -40,6 +44,7 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
         { id: 'inventory', label: 'Shoe Stock & Low-Alerts', icon: Layers },
         { id: 'restock-requests', label: 'Shoe Restock Requests', icon: ArrowDownToLine },
         { id: 'deliveries', label: 'Receive Footwear Deliveries', icon: Truck },
+        { id: 'suppliers', label: 'Authorized Suppliers', icon: Factory },
         { id: 'sales-history', label: 'Branch Sales History', icon: ShoppingCart },
         { id: 'audit-trail', label: 'Branch Movement History', icon: History }
       ];

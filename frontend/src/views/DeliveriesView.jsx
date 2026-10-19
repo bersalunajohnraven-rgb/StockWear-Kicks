@@ -109,7 +109,7 @@ export const DeliveriesView = ({
               {deliveries.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="py-12 text-center text-slate-500">
-                    No deliveries on record. Receive a delivery against an open Purchase Order.
+                    No data yet. No deliveries on record. Receive a delivery against an open Purchase Order.
                   </td>
                 </tr>
               ) : (

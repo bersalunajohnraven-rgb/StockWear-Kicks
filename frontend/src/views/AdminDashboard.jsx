@@ -7,7 +7,6 @@ import {
   ShoppingCart, 
   Truck, 
   ArrowUpRight,
-  ShieldCheck,
   CheckCircle,
   Clock
 } from 'lucide-react';
@@ -170,74 +169,34 @@ export const AdminDashboard = ({
       </div>
 
       {/* Cross-Branch Stock Distribution Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Branch Stock Breakdown */}
-        <div className="lg:col-span-2 rounded-2xl border border-slate-800 bg-slate-900/60 p-5 shadow-lg">
-          <h3 className="text-base font-bold text-white mb-1">Branch Stock Distribution</h3>
-          <p className="text-xs text-slate-400 mb-4">Stock health and active alerts by store location</p>
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 shadow-lg">
+        <h3 className="text-base font-bold text-white mb-1">Branch Stock Distribution</h3>
+        <p className="text-xs text-slate-400 mb-4">Stock health and active alerts by store location</p>
 
-          <div className="space-y-3">
-            {branches.map((b) => {
-              const branchInv = inventory.filter(i => i.branchID === b.branchID);
-              const branchUnits = branchInv.reduce((sum, i) => sum + i.quantity, 0);
-              const branchLows = branchInv.filter(i => i.quantity <= i.reorder_threshold).length;
-              return (
-                <div key={b.branchID} className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-semibold text-slate-200 text-sm">{b.name}</h4>
-                      <p className="text-xs text-slate-500">{b.address}</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-base font-bold text-white">{branchUnits} <span className="text-xs font-normal text-slate-400">units</span></div>
-                      {branchLows > 0 ? (
-                        <Badge variant="warning" size="sm">{branchLows} Low Stock Items</Badge>
-                      ) : (
-                        <Badge variant="success" size="sm">Optimal Stock</Badge>
-                      )}
-                    </div>
+        <div className="space-y-3">
+          {branches.map((b) => {
+            const branchInv = inventory.filter(i => i.branchID === b.branchID);
+            const branchUnits = branchInv.reduce((sum, i) => sum + i.quantity, 0);
+            const branchLows = branchInv.filter(i => i.quantity <= i.reorder_threshold).length;
+            return (
+              <div key={b.branchID} className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold text-slate-200 text-sm">{b.name}</h4>
+                    <p className="text-xs text-slate-500">{b.address}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-base font-bold text-white">{branchUnits} <span className="text-xs font-normal text-slate-400">units</span></div>
+                    {branchLows > 0 ? (
+                      <Badge variant="warning" size="sm">{branchLows} Low Stock Items</Badge>
+                    ) : (
+                      <Badge variant="success" size="sm">Optimal Stock</Badge>
+                    )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Database Architectural Safeguards Card */}
-        <div className="rounded-2xl border border-indigo-900/50 bg-gradient-to-b from-indigo-950/40 via-slate-900 to-slate-900 p-5 shadow-lg flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-indigo-400 font-bold mb-3">
-              <ShieldCheck className="h-5 w-5" />
-              <span>Database Safeguards Active</span>
-            </div>
-            <ul className="space-y-3 text-xs text-slate-300">
-              <li className="flex items-start gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
-                <span><strong>Row-Level Locks:</strong> Prevents overselling during concurrent transactions with <code>SELECT ... FOR UPDATE</code>.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0" />
-                <span><strong>Automated Triggers:</strong> Low stock thresholds immediately generate restock requests.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
-                <span><strong>Audit Movements:</strong> Every sale, delivery, and manual edit is logged with actor ID and delta.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-purple-400 mt-1.5 shrink-0" />
-                <span><strong>RLS Branch Isolation:</strong> Managers and cashiers are confined to their branch data.</span>
-              </li>
-            </ul>
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-slate-800">
-            <button
-              onClick={() => onNavigate('database-defense')}
-              className="w-full rounded-xl bg-indigo-600/30 border border-indigo-500/40 py-2 text-xs font-semibold text-indigo-300 hover:bg-indigo-600 hover:text-white transition-all text-center"
-            >
-              Open Technical Defense Blueprint
-            </button>
-          </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

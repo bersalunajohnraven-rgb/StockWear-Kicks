@@ -12,10 +12,19 @@ import {
 import { Badge } from '../components/Badge';
 import { Modal } from '../components/Modal';
 
-export const ProductsView = ({ products = [], onCreateProduct, onUpdateProduct, onDeleteProduct }) => {
+export const ProductsView = ({ 
+  products = [], 
+  onCreateProduct, 
+  onUpdateProduct, 
+  onSaveProduct,
+  onDeleteProduct, 
+  currentUser 
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+
+  const canDelete = currentUser?.role_name === 'owner' || currentUser?.role_name === 'admin';
 
   // Form states
   const [sku, setSku] = useState('');
@@ -23,6 +32,7 @@ export const ProductsView = ({ products = [], onCreateProduct, onUpdateProduct, 
   const [category, setCategory] = useState('Lifestyle');
   const [unitCost, setUnitCost] = useState('');
   const [unitPrice, setUnitPrice] = useState('');
+  const [formError, setFormError] = useState('');
 
   const filteredProducts = products.filter(p => 
     p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -36,33 +46,54 @@ export const ProductsView = ({ products = [], onCreateProduct, onUpdateProduct, 
     setCategory('Lifestyle');
     setUnitCost('');
     setUnitPrice('');
+    setFormError('');
   };
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     if (!sku || !name || !unitCost || !unitPrice) return;
-    await onCreateProduct({
+    setFormError('');
+    const payload = {
       sku,
       name,
       category,
       unit_cost: parseFloat(unitCost),
       unit_price: parseFloat(unitPrice)
-    });
-    resetForm();
-    setIsAddModalOpen(false);
+    };
+    try {
+      if (onCreateProduct) {
+        await onCreateProduct(payload);
+      } else if (onSaveProduct) {
+        await onSaveProduct(payload);
+      }
+      resetForm();
+      setIsAddModalOpen(false);
+    } catch (err) {
+      setFormError(err.message || 'Failed to create product');
+    }
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     if (!editingProduct) return;
-    await onUpdateProduct(editingProduct.productID, {
+    setFormError('');
+    const payload = {
       name,
       category,
       unit_cost: parseFloat(unitCost),
       unit_price: parseFloat(unitPrice)
-    });
-    setEditingProduct(null);
-    resetForm();
+    };
+    try {
+      if (onUpdateProduct) {
+        await onUpdateProduct(editingProduct.productID, payload);
+      } else if (onSaveProduct) {
+        await onSaveProduct({ productID: editingProduct.productID, ...payload });
+      }
+      setEditingProduct(null);
+      resetForm();
+    } catch (err) {
+      setFormError(err.message || 'Failed to update product');
+    }
   };
 
   const openEditModal = (product) => {
@@ -136,7 +167,7 @@ export const ProductsView = ({ products = [], onCreateProduct, onUpdateProduct, 
               {filteredProducts.length === 0 ? (
                 <tr>
                   <td colSpan="7" className="py-12 text-center text-slate-500">
-                    No products found.
+                    No data yet. No products found.
                   </td>
                 </tr>
               ) : (
@@ -173,16 +204,19 @@ export const ProductsView = ({ products = [], onCreateProduct, onUpdateProduct, 
                           >
                             <Edit2 className="h-3.5 w-3.5" />
                           </button>
-                          <button
-                            onClick={() => {
-                              if (confirm(`Delete ${p.name}? This will remove related branch inventory rows.`)) {
-                                onDeleteProduct(p.productID);
-                              }
-                            }}
-                            className="rounded-lg bg-rose-950/60 p-1.5 text-rose-400 hover:bg-rose-900 transition-colors"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                          {canDelete && (
+                            <button
+                              onClick={() => {
+                                if (confirm(`Delete ${p.name}? This will remove related branch inventory rows.`)) {
+                                  onDeleteProduct?.(p.productID);
+                                }
+                              }}
+                              className="rounded-lg bg-rose-950/60 p-1.5 text-rose-400 hover:bg-rose-900 transition-colors"
+                              title="Delete Product (Owner/Admin only)"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -203,6 +237,11 @@ export const ProductsView = ({ products = [], onCreateProduct, onUpdateProduct, 
           subtitle="Automatically creates inventory rows for all active branches"
         >
           <form onSubmit={handleAddSubmit} className="space-y-4 text-xs">
+            {formError && (
+              <div className="rounded-xl bg-rose-950/60 border border-rose-800 p-2.5 text-xs text-rose-300">
+                {formError}
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-slate-400 mb-1 font-medium">SKU (Unique Barcode)</label>
@@ -302,6 +341,11 @@ export const ProductsView = ({ products = [], onCreateProduct, onUpdateProduct, 
           subtitle="Updates master catalog pricing"
         >
           <form onSubmit={handleEditSubmit} className="space-y-4 text-xs">
+            {formError && (
+              <div className="rounded-xl bg-rose-950/60 border border-rose-800 p-2.5 text-xs text-rose-300">
+                {formError}
+              </div>
+            )}
             <div>
               <label className="block text-slate-400 mb-1 font-medium">Product Name</label>
               <input

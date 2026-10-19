@@ -1,34 +1,47 @@
 import React, { useState } from 'react';
-import { Building2, Plus, Pencil, MapPin, Phone, Users } from 'lucide-react';
+import { Building2, Plus, Pencil, Trash2, MapPin, Phone, Users } from 'lucide-react';
 import { Badge } from '../components/Badge';
 import { Modal } from '../components/Modal';
 
-const EMPTY_FORM = { name: '', city: '', region: '', phone: '' };
+const EMPTY_FORM = { name: '', address: '', city: '', region: '', phone: '' };
 
-export const BranchesView = ({ branches = [], users = [], onSaveBranch }) => {
+export const BranchesView = ({ branches = [], users = [], currentUser, onSaveBranch, onDeleteBranch }) => {
+  const isOwnerOrAdmin = !currentUser || ['owner', 'admin'].includes(currentUser?.role_name);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
 
   const openAdd = () => {
     setEditing(null);
     setForm(EMPTY_FORM);
+    setFormError('');
     setIsModalOpen(true);
   };
 
   const openEdit = (branch) => {
     setEditing(branch);
-    setForm({ name: branch.name, city: branch.city || '', region: branch.region || '', phone: branch.phone || '' });
+    setForm({
+      name: branch.name || '',
+      address: branch.address || '',
+      city: branch.city || '',
+      region: branch.region || '',
+      phone: branch.phone || ''
+    });
+    setFormError('');
     setIsModalOpen(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setFormError('');
     try {
       await onSaveBranch({ ...(editing || {}), ...form });
       setIsModalOpen(false);
+    } catch (err) {
+      setFormError(err.message || 'Failed to save branch');
     } finally {
       setSubmitting(false);
     }
@@ -63,12 +76,13 @@ export const BranchesView = ({ branches = [], users = [], onSaveBranch }) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
         {branches.length === 0 ? (
           <div className="col-span-3 rounded-2xl border border-dashed border-slate-700 py-16 text-center text-slate-500 text-sm">
-            No branches configured. Add your first branch.
+            No data yet. No branches found. Click "Add Branch" to create one.
           </div>
         ) : (
           branches.map((branch) => {
             const staff = getBranchStaff(branch.branchID);
             const manager = staff.find(u => u.role_name === 'branch_manager');
+            const locationText = branch.address || [branch.city, branch.region].filter(Boolean).join(', ');
             return (
               <div key={branch.branchID}
                 className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 shadow-xl hover:border-indigo-700/50 transition-all group relative overflow-hidden">
@@ -84,19 +98,35 @@ export const BranchesView = ({ branches = [], users = [], onSaveBranch }) => {
                       <div className="text-[11px] font-mono text-slate-500">{branch.branchID?.slice(0, 12)}…</div>
                     </div>
                   </div>
-                  <button
-                    onClick={() => openEdit(branch)}
-                    className="rounded-lg bg-slate-800 p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => openEdit(branch)}
+                      title="Edit Branch"
+                      className="rounded-lg bg-slate-800 p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white transition-colors"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    {isOwnerOrAdmin && (
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`Are you sure you want to delete branch "${branch.name}"? This will also remove inventory assigned to this branch.`)) {
+                            onDeleteBranch?.(branch.branchID);
+                          }
+                        }}
+                        title="Delete Branch"
+                        className="rounded-lg bg-slate-800 p-1.5 text-rose-400 hover:bg-rose-950/60 hover:text-rose-300 transition-colors"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="mt-4 space-y-2 text-xs text-slate-400">
-                  {(branch.city || branch.region) && (
+                  {locationText && (
                     <div className="flex items-center gap-2">
                       <MapPin className="h-3 w-3 text-slate-500 shrink-0" />
-                      <span>{[branch.city, branch.region].filter(Boolean).join(', ')}</span>
+                      <span className="truncate">{locationText}</span>
                     </div>
                   )}
                   {branch.phone && (
@@ -140,8 +170,14 @@ export const BranchesView = ({ branches = [], users = [], onSaveBranch }) => {
         maxWidth="max-w-md"
       >
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          {formError && (
+            <div className="rounded-xl bg-rose-950/60 border border-rose-800 p-2.5 text-xs text-rose-300">
+              {formError}
+            </div>
+          )}
           {[
             { label: 'Branch Name', key: 'name', placeholder: 'e.g. SM Megamall Branch', required: true },
+            { label: 'Street Address / Location', key: 'address', placeholder: 'e.g. CPG Avenue, Tagbilaran City' },
             { label: 'City', key: 'city', placeholder: 'e.g. Mandaluyong' },
             { label: 'Region', key: 'region', placeholder: 'e.g. NCR' },
             { label: 'Phone / Contact', key: 'phone', placeholder: 'e.g. +63 2 8888 1234' },
