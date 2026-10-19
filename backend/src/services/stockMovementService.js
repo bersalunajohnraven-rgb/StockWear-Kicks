@@ -27,7 +27,7 @@ const getStockMovementById = async (movementID) => {
 };
 
 const createStockMovement = async (data) => {
-    return await prisma.stock_movements.create({
+    const movement = await prisma.stock_movements.create({
         data: {
             productID: data.productID,
             branchID: data.branchID,
@@ -42,6 +42,24 @@ const createStockMovement = async (data) => {
             users: true
         }
     });
+
+    try {
+        await prisma.inventory.updateMany({
+            where: {
+                productID: data.productID,
+                branchID: data.branchID
+            },
+            data: {
+                quantity: {
+                    increment: Number(data.change_qty)
+                }
+            }
+        });
+    } catch (e) {
+        console.error('Failed to update inventory during stock movement', e);
+    }
+
+    return movement;
 };
 
 const updateStockMovement = async (movementID, data) => {
