@@ -175,7 +175,7 @@ export const InventoryView = ({
               {filteredInventory.length === 0 ? (
                 <tr>
                   <td colSpan="8" className="py-12 text-center text-slate-500">
-                    No inventory records matching current filter criteria.
+                    No data yet. No inventory records matching current filter criteria.
                   </td>
                 </tr>
               ) : (

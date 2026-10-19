@@ -16,6 +16,8 @@ import { DeliveriesView } from './views/DeliveriesView';
 import { AuditTrailView } from './views/AuditTrailView';
 import { BranchesView } from './views/BranchesView';
 import { StaffView } from './views/StaffView';
+import { SuppliersView } from './views/SuppliersView';
+import { DatabaseDefenseView } from './views/DatabaseDefenseView';
 
 // ─── Login Screen (Footwear & Sneaker Retail) ──────────────────────────────
 const LoginScreen = () => {
@@ -163,6 +165,7 @@ const AppShell = () => {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loadingData, setLoadingData] = useState(true);
+  const [dataError, setDataError] = useState(null);
 
   // ── Global state ──────────────────────────────────────────────────────────
   const [branches, setBranches] = useState([]);
@@ -174,6 +177,7 @@ const AppShell = () => {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [deliveries, setDeliveries] = useState([]);
   const [stockMovements, setStockMovements] = useState([]);
+  const [restockRequests, setRestockRequests] = useState([]);
 
   // Modal state lifted up (some views need controlled modal)
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
@@ -182,17 +186,20 @@ const AppShell = () => {
   // ── Load all data on mount / user switch ─────────────────────────────────
   const loadData = useCallback(async () => {
     setLoadingData(true);
+    setDataError(null);
     try {
-      const [br, pr, us, sup, inv, sl, po, del, mv] = await Promise.all([
+      const isCashier = (currentUser?.role_name || '').toLowerCase() === 'cashier';
+      const [br, pr, us, sup, inv, sl, po, del, mv, reqs] = await Promise.all([
         apiClient.getBranches(),
         apiClient.getProducts(),
-        apiClient.getUsers(),
-        apiClient.getSuppliers(),
+        isCashier ? Promise.resolve([]) : apiClient.getUsers(),
+        isCashier ? Promise.resolve([]) : apiClient.getSuppliers(),
         apiClient.getInventory(currentUser),
         apiClient.getSales(currentUser),
-        apiClient.getPurchaseOrders(currentUser),
-        apiClient.getDeliveries(currentUser),
+        isCashier ? Promise.resolve([]) : apiClient.getPurchaseOrders(currentUser),
+        isCashier ? Promise.resolve([]) : apiClient.getDeliveries(currentUser),
         apiClient.getStockMovements(currentUser),
+        isCashier ? Promise.resolve([]) : apiClient.getRestockRequests(currentUser),
       ]);
       setBranches(br || []);
       setProducts(pr || []);
@@ -203,8 +210,10 @@ const AppShell = () => {
       setPurchaseOrders(po || []);
       setDeliveries(del || []);
       setStockMovements(mv || []);
+      setRestockRequests(reqs || []);
     } catch (err) {
       console.error('Failed to load data:', err);
+      setDataError(err.message || 'Failed to connect to the backend server. Please verify your connection.');
     } finally {
       setLoadingData(false);
     }
@@ -251,12 +260,22 @@ const AppShell = () => {
     await loadData();
   };
 
+  const handleDeleteProduct = async (productID) => {
+    await apiClient.deleteProduct(productID);
+    await loadData();
+  };
+
   const handleSaveUser = async (userData) => {
     if (userData.userID) {
       await apiClient.updateUser(userData);
     } else {
       await apiClient.createUser(userData);
     }
+    await loadData();
+  };
+
+  const handleDeleteUser = async (userID) => {
+    await apiClient.deleteUser(userID);
     await loadData();
   };
 
@@ -269,6 +288,31 @@ const AppShell = () => {
     await loadData();
   };
 
+  const handleDeleteBranch = async (branchID) => {
+    await apiClient.deleteBranch(branchID);
+    await loadData();
+  };
+
+  const handleSaveSupplier = async (supplierData) => {
+    if (supplierData.supplierID) {
+      await apiClient.updateSupplier(supplierData.supplierID, supplierData);
+    } else {
+      await apiClient.createSupplier(supplierData);
+    }
+    await loadData();
+  };
+
+  const handleDeleteSupplier = async (supplierID) => {
+    await apiClient.deleteSupplier(supplierID);
+    await loadData();
+  };
+
+  const handleApproveRestockRequest = async (requestID, supplierID) => {
+    const defaultSupplier = supplierID || suppliers[0]?.supplierID;
+    await apiClient.approveRestockRequest(requestID, defaultSupplier, currentUser);
+    await loadData();
+  };
+
   const handleManualAdj = async (adjData) => {
     await apiClient.manualAdjustment(adjData, currentUser);
     await loadData();
@@ -277,6 +321,28 @@ const AppShell = () => {
   // ── View renderer ─────────────────────────────────────────────────────────
   const renderView = () => {
     if (loadingData) return <LoadingSpinner />;
+
+    if (dataError) {
+      return (
+        <div className="rounded-2xl border border-rose-800/60 bg-rose-950/30 p-8 text-center max-w-lg mx-auto my-12 space-y-4">
+          <div className="inline-flex p-3 rounded-full bg-rose-900/50 text-rose-400">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-bold text-white">Data Connection Error</h3>
+          <p className="text-xs text-rose-300 font-mono">{dataError}</p>
+          <div>
+            <button
+              onClick={() => loadData()}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-lg transition-all"
+            >
+              Retry Connection
+            </button>
+          </div>
+        </div>
+      );
+    }
 
     switch (activeTab) {
       case 'admin-dashboard':
@@ -289,6 +355,9 @@ const AppShell = () => {
             sales={sales}
             purchaseOrders={purchaseOrders}
             stockMovements={stockMovements}
+            restockRequests={restockRequests}
+            onApproveRequest={handleApproveRestockRequest}
+            onNavigate={setActiveTab}
             setActiveTab={setActiveTab}
           />
         );
@@ -301,6 +370,10 @@ const AppShell = () => {
             sales={sales.filter(s => s.branchID === currentUser?.branchID)}
             purchaseOrders={purchaseOrders.filter(po => po.branchID === currentUser?.branchID)}
             stockMovements={stockMovements.filter(m => m.branchID === currentUser?.branchID)}
+            restockRequests={restockRequests.filter(r => !currentUser?.branchID || r.branchID === currentUser.branchID)}
+            onNavigate={setActiveTab}
+            onOpenReceiveDelivery={() => setActiveTab('deliveries')}
+            onOpenRestockModal={() => setActiveTab('purchase-orders')}
             setActiveTab={setActiveTab}
           />
         );
@@ -331,6 +404,9 @@ const AppShell = () => {
             currentUser={currentUser}
             products={products}
             onSaveProduct={handleSaveProduct}
+            onCreateProduct={handleSaveProduct}
+            onUpdateProduct={(id, data) => handleSaveProduct({ productID: id, ...data })}
+            onDeleteProduct={handleDeleteProduct}
           />
         );
       case 'purchase-orders':
@@ -339,12 +415,14 @@ const AppShell = () => {
           <PurchaseOrdersView
             currentUser={currentUser}
             purchaseOrders={purchaseOrders}
+            restockRequests={restockRequests}
             products={products}
             branches={branches}
             suppliers={suppliers}
             inventory={inventory}
             onCreatePO={handleCreatePO}
             onApprovePO={handleApprovePO}
+            onApproveRequest={handleApproveRestockRequest}
             isModalOpen={poModalOpen}
             onOpenModal={() => setPoModalOpen(true)}
             onCloseModal={() => setPoModalOpen(false)}
@@ -377,6 +455,7 @@ const AppShell = () => {
             users={users}
             currentUser={currentUser}
             onSaveBranch={handleSaveBranch}
+            onDeleteBranch={handleDeleteBranch}
           />
         );
       case 'staff':
@@ -386,8 +465,21 @@ const AppShell = () => {
             branches={branches}
             currentUser={currentUser}
             onSaveUser={handleSaveUser}
+            onDeleteUser={handleDeleteUser}
           />
         );
+      case 'suppliers':
+        return (
+          <SuppliersView
+            suppliers={suppliers}
+            purchaseOrders={purchaseOrders}
+            currentUser={currentUser}
+            onSaveSupplier={handleSaveSupplier}
+            onDeleteSupplier={handleDeleteSupplier}
+          />
+        );
+      case 'database-defense':
+        return <DatabaseDefenseView />;
       case 'audit-trail':
         return (
           <AuditTrailView
@@ -409,7 +501,6 @@ const AppShell = () => {
     <div className="min-h-screen bg-[#07090f] text-slate-200 flex flex-col">
       <Navbar
         onResetData={() => {
-          apiClient.resetState();
           loadData();
         }}
       />

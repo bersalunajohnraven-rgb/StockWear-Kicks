@@ -90,7 +90,7 @@ export const AuditTrailView = ({ currentUser, stockMovements = [], branches = []
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan="8" className="py-12 text-center text-slate-500">
-                    No audit events recorded yet.
+                    No data yet. No audit events recorded yet.
                   </td>
                 </tr>
               ) : (

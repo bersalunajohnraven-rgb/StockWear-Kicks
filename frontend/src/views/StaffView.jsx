@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, Plus, Pencil, Shield, Building2, Mail } from 'lucide-react';
+import { Users, Plus, Pencil, Trash2, Shield, Building2, Mail } from 'lucide-react';
 import { Badge } from '../components/Badge';
 import { Modal } from '../components/Modal';
 
@@ -25,11 +25,12 @@ const EMPTY_FORM = {
   branchID: ''
 };
 
-export const StaffView = ({ users = [], branches = [], currentUser, onSaveUser }) => {
+export const StaffView = ({ users = [], branches = [], currentUser, onSaveUser, onDeleteUser }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [branchFilter, setBranchFilter] = useState('ALL');
 
@@ -38,6 +39,7 @@ export const StaffView = ({ users = [], branches = [], currentUser, onSaveUser }
   const openAdd = () => {
     setEditing(null);
     setForm({ ...EMPTY_FORM, branchID: branches[0]?.branchID || '' });
+    setFormError('');
     setIsModalOpen(true);
   };
 
@@ -50,15 +52,19 @@ export const StaffView = ({ users = [], branches = [], currentUser, onSaveUser }
       role_name: user.role_name || 'cashier',
       branchID: user.branchID || ''
     });
+    setFormError('');
     setIsModalOpen(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setFormError('');
     try {
       await onSaveUser({ ...(editing || {}), ...form });
       setIsModalOpen(false);
+    } catch (err) {
+      setFormError(err.message || 'Failed to save staff member');
     } finally {
       setSubmitting(false);
     }
@@ -141,7 +147,7 @@ export const StaffView = ({ users = [], branches = [], currentUser, onSaveUser }
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="py-12 text-center text-slate-500">
-                    No staff accounts match the current filters.
+                    No data yet. No staff accounts match the current filters.
                   </td>
                 </tr>
               ) : (
@@ -190,12 +196,31 @@ export const StaffView = ({ users = [], branches = [], currentUser, onSaveUser }
                       </td>
                       {isOwnerOrAdmin && (
                         <td className="px-5 py-3.5 text-center">
-                          <button
-                            onClick={() => openEdit(user)}
-                            className="rounded-lg bg-slate-800 p-1.5 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => openEdit(user)}
+                              title="Edit Staff Account"
+                              className="rounded-lg bg-slate-800 p-1.5 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (user.userID === currentUser?.userID) {
+                                  alert('You cannot delete your own active session account.');
+                                  return;
+                                }
+                                if (window.confirm(`Are you sure you want to delete account "${user.full_name || user.email}"?`)) {
+                                  onDeleteUser?.(user.userID);
+                                }
+                              }}
+                              disabled={user.userID === currentUser?.userID}
+                              title={user.userID === currentUser?.userID ? "Cannot delete own active account" : "Delete Staff Account"}
+                              className="rounded-lg bg-slate-800 p-1.5 text-rose-400 hover:bg-rose-950/60 hover:text-rose-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                         </td>
                       )}
                     </tr>
@@ -216,6 +241,11 @@ export const StaffView = ({ users = [], branches = [], currentUser, onSaveUser }
         maxWidth="max-w-md"
       >
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          {formError && (
+            <div className="rounded-xl bg-rose-950/60 border border-rose-800 p-2.5 text-xs text-rose-300">
+              {formError}
+            </div>
+          )}
           <div>
             <label className="block text-slate-400 mb-1 font-medium">Full Name</label>
             <input type="text" value={form.full_name}
@@ -245,12 +275,20 @@ export const StaffView = ({ users = [], branches = [], currentUser, onSaveUser }
           <div>
             <label className="block text-slate-400 mb-1 font-medium">Role</label>
             <select value={form.role_name}
-              onChange={(e) => setForm(f => ({ ...f, role_name: e.target.value }))}
+              onChange={(e) => {
+                const newRole = e.target.value;
+                setForm(f => ({
+                  ...f,
+                  role_name: newRole,
+                  branchID: newRole === 'owner' ? '' : (f.branchID || branches[0]?.branchID || '')
+                }));
+              }}
               className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-200 focus:border-indigo-500 focus:outline-none"
             >
-              <option value="cashier">Cashier / Sales Staff</option>
+              <option value="owner">Owner (Full System & Cross-Branch Access)</option>
+              <option value="admin">Admin (Regional Management)</option>
               <option value="branch_manager">Branch Manager</option>
-              <option value="admin">Admin</option>
+              <option value="cashier">Cashier / Sales Staff</option>
             </select>
           </div>
           <div>

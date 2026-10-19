@@ -72,7 +72,7 @@ export const Navbar = ({ onResetData }) => {
             {onResetData && (
               <button
                 onClick={onResetData}
-                title="Reset Database to Seed State"
+                title="Refresh Data"
                 className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
               >
                 <RefreshCw className="h-4 w-4" />

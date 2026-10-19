@@ -1,11 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { INITIAL_USERS } from '../api/mockData';
 import { checkBackendHealth } from '../api/apiClient';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  // Start with null — user MUST log in
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const saved = localStorage.getItem('stockwear_current_user') || localStorage.getItem('stockline_current_user');
@@ -17,10 +15,8 @@ export const AuthProvider = ({ children }) => {
   });
 
   const [backendOnline, setBackendOnline] = useState(false);
-  const [isSimulatingConcurrency, setIsSimulatingConcurrency] = useState(false);
 
   useEffect(() => {
-    // Check backend health periodically
     const verifyBackend = async () => {
       const isOnline = await checkBackendHealth();
       setBackendOnline(isOnline);
@@ -35,57 +31,45 @@ export const AuthProvider = ({ children }) => {
       return { success: false, message: 'Please enter both email and password.' };
     }
 
-    // Try live backend auth endpoint first
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-      if (res.ok) {
-        const data = await res.json();
-        const matched = INITIAL_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
-        const authedUser = matched || {
-          userID: 'authed-usr-1',
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data.accessToken) {
+        const authedUser = data.user || {
+          userID: data.userID,
           email,
-          firstName: 'Verified',
-          lastName: 'User',
-          role_name: data.roleName || 'admin',
+          firstName: data.firstName || 'Staff',
+          lastName: data.lastName || 'User',
+          role_name: data.roleName || 'cashier',
           branchID: data.branchID || null,
-          branchName: 'Main Branch'
+          branchName: data.branchName || 'Assigned Branch'
         };
+
         setCurrentUser(authedUser);
+        setBackendOnline(true);
         localStorage.setItem('stockwear_token', data.accessToken);
         localStorage.setItem('stockwear_current_user', JSON.stringify(authedUser));
         localStorage.setItem('stockline_token', data.accessToken);
         localStorage.setItem('stockline_current_user', JSON.stringify(authedUser));
         return { success: true };
       }
-    } catch {
-      // Backend not running; fallback to demo credential validation
-    }
 
-    // Demo credentials fallback — validate both email AND password
-    // Normalize email prefix so both @stockwearkicks.com and @stockline.com work interchangeably
-    const normalizeEmail = (e) =>
-      e.toLowerCase().trim()
-        .replace('@stockwearkicks.com', '')
-        .replace('@stockline.com', '')
-        .replace('@stockwear-kicks.com', '');
-
-    const matched = INITIAL_USERS.find(
-      u =>
-        (u.email.toLowerCase() === email.toLowerCase() ||
-         normalizeEmail(u.email) === normalizeEmail(email)) &&
-        u.password === password
-    );
-    if (matched) {
-      setCurrentUser(matched);
-      localStorage.setItem('stockwear_current_user', JSON.stringify(matched));
-      localStorage.setItem('stockline_current_user', JSON.stringify(matched));
-      return { success: true };
+      return {
+        success: false,
+        message: data.message || 'Invalid email or password.'
+      };
+    } catch (err) {
+      return {
+        success: false,
+        message: 'Backend is offline. Please start the server and try again.'
+      };
     }
-    return { success: false, message: 'Invalid email or password. Please check your credentials and try again.' };
   };
 
   const logout = () => {
@@ -102,9 +86,7 @@ export const AuthProvider = ({ children }) => {
         currentUser,
         login,
         logout,
-        backendOnline,
-        isSimulatingConcurrency,
-        setIsSimulatingConcurrency
+        backendOnline
       }}
     >
       {children}

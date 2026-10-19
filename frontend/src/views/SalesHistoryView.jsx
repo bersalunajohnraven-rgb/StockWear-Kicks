@@ -78,7 +78,7 @@ export const SalesHistoryView = ({ currentUser, sales = [] }) => {
               {filteredSales.length === 0 ? (
                 <tr>
                   <td colSpan="7" className="py-12 text-center text-slate-500">
-                    No sales records found.
+                    No data yet. No sales records found.
                   </td>
                 </tr>
               ) : (
