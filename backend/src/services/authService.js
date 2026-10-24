@@ -17,8 +17,8 @@ const getAuthPrisma = () => {
         throw new Error('DATABASE_URL or AUTH_DATABASE_URL is required for login');
     }
 
-    if (!authPrisma) {
-        authPrisma = new PrismaClient({
+    if (!globalThis.authPrismaInstance) {
+        globalThis.authPrismaInstance = new PrismaClient({
             datasources: {
                 db: {
                     url: databaseUrl
@@ -27,7 +27,7 @@ const getAuthPrisma = () => {
         });
     }
 
-    return authPrisma;
+    return globalThis.authPrismaInstance;
 };
 
 const verifyAuthDatabaseRole = async () => {

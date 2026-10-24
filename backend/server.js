@@ -28,9 +28,26 @@ const authRoutes = require('./src/routes/authRoutes');
 const app = express();
 
 // CORS must come before the routes
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(
     cors({
-        origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+        origin: (origin, callback) => {
+            if (!origin) return callback(null, true);
+            if (
+                allowedOrigins.includes(origin) ||
+                origin.endsWith('.vercel.app') ||
+                process.env.NODE_ENV !== 'production'
+            ) {
+                return callback(null, true);
+            }
+            return callback(null, true);
+        },
+        credentials: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization']
     })
@@ -73,6 +90,12 @@ app.get('/', (req, res) => {
     });
 });
 
+app.get('/api', (req, res) => {
+    res.json({
+        message: 'StockWear Kicks API is running!'
+    });
+});
+
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'ok',
@@ -99,4 +122,8 @@ const startServer = async () => {
     }
 };
 
-startServer();
+if (require.main === module) {
+    startServer();
+}
+
+module.exports = app;

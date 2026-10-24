@@ -2,13 +2,21 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env'
 const { PrismaClient } = require('@prisma/client');
 const { getDatabaseContext } = require('./databaseContext');
 
-const basePrisma = new PrismaClient({
-    omit: {
-        users: {
-            password_hash: true
+const globalForPrisma = globalThis;
+
+const basePrisma =
+    globalForPrisma.prismaInstance ||
+    new PrismaClient({
+        omit: {
+            users: {
+                password_hash: true
+            }
         }
-    }
-});
+    });
+
+if (!globalForPrisma.prismaInstance) {
+    globalForPrisma.prismaInstance = basePrisma;
+}
 
 const prisma = basePrisma.$extends({
     query: {
