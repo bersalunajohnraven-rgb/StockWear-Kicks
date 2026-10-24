@@ -31,11 +31,13 @@ export const AuthProvider = ({ children }) => {
       return { success: false, message: 'Please enter both email and password.' };
     }
 
+    const cleanEmail = email.trim().toLowerCase();
+
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email: cleanEmail, password })
       });
 
       const data = await res.json().catch(() => ({}));

@@ -10,7 +10,8 @@ const login = async (req, res) => {
     }
 
     try {
-        const user = await authService.authenticateCredentials(email, password);
+        const normalizedEmail = email.trim().toLowerCase();
+        const user = await authService.authenticateCredentials(normalizedEmail, password);
 
         if (!user) {
             return res.status(401).json({
