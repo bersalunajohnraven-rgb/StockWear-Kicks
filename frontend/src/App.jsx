@@ -85,6 +85,10 @@ const LoginScreen = () => {
               <input
                 id="login-email"
                 type="email"
+                inputMode="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="staff@stockwearkicks.com"
