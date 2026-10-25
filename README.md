@@ -11,6 +11,7 @@ The system prevents stockouts and over-selling by:
 - Generating automated restock requests when stock drops below threshold.
 - Providing a fast, dedicated Sneaker Point-of-Sale (POS) terminal for store cashiers.
 - Recording complete stock movement audit trails for sales, shipments, and manual adjustments.
+- Recording tamper-proof row-level audit logs on sensitive entities (users, roles, branches, products, suppliers, purchase orders).
 - Utilizing row-level concurrency protection (`SELECT ... FOR UPDATE`) and ACID transactions during multi-item checkouts.
 - Enforcing branch isolation and role privileges through PostgreSQL Row-Level Security (RLS) policies and JWT-based Role-Based Access Control (RBAC).
 
@@ -66,14 +67,14 @@ Open your browser at **[http://localhost:5173](http://localhost:5173)**. Request
 
 Authentication is required to access the system. Each account is assigned a specific role and branch scope:
 
-| Role | Name | Email Address | Default Password | Branch Scope & Access Level |
-|---|---|---|---|---|
-| **Store Owner / Regional Admin** | Eleanor Vance | `admin@stockwearkicks.com` | `admin123` | Global executive access across all branches, catalog editing, restock approval, and database defense panel |
-| **Branch Manager** | Marcus Holloway | `manager.main@stockwearkicks.com` | `manager123` | Main Branch (Tagbilaran) inventory, low-stock alerts, restock requests, and delivery receipts |
-| **Branch Manager** | Chloe Tan | `manager.panglao@stockwearkicks.com` | `manager123` | Panglao Hub Branch inventory, branch sales logs, and restock requests |
-| **Store Cashier** | Juan Cruz | `cashier@stockwearkicks.com` | `cashier123` | Sneaker Point-of-Sale (POS) terminal, register checkout, and personal sales receipts |
+| Role | Name | Email Address | Branch Scope & Access Level |
+|---|---|---|---|
+| **Store Owner / Regional Admin** | Eleanor Vance | `admin@stockwearkicks.com` | Global executive access across all branches, catalog editing, restock approval, and database defense panel |
+| **Branch Manager** | Marcus Holloway | `manager.main@stockwearkicks.com` | Main Branch (Tagbilaran) inventory, low-stock alerts, restock requests, and delivery receipts |
+| **Branch Manager** | Chloe Tan | `manager.panglao@stockwearkicks.com` | Panglao Hub Branch inventory, branch sales logs, and restock requests |
+| **Store Cashier** | Juan Cruz | `cashier@stockwearkicks.com` | Sneaker Point-of-Sale (POS) terminal, register checkout, and personal sales receipts |
 
-> **Note**: Running `npm run seed` in `backend/` creates the initial Store Owner account (`admin@stockwearkicks.com`) using `SEED_ADMIN_PASSWORD` from `backend/.env`. Additional staff and branch managers can be created through the **Staff Accounts & Roles** view.
+> **Note**: For security compliance, default passwords have been omitted from this repository. Account credentials and demonstration passwords are provided to the course instructor separately. Running `npm run seed` in `backend/` creates the initial Store Owner account (`admin@stockwearkicks.com`) using `SEED_ADMIN_PASSWORD` from `backend/.env`. Additional staff and branch managers can be created through the **Staff Accounts & Roles** view.
 
 ---
 
@@ -126,6 +127,12 @@ Authentication is required to access the system. Each account is assigned a spec
 - Complete immutable history of all inventory modifications (Sales, Deliveries, and Manual Adjustments).
 - Tracks exact quantity delta, reference document ID, actor name, and timestamp.
 
+### 🛡️ Audit Logging & Tamper-Proof Trail (`Audit Logging`)
+- **Row-Level Entity Auditing**: Comprehensive audit logging capturing every `INSERT`, `UPDATE`, and `DELETE` event across sensitive tables (`users`, `roles`, `branch`, `products`, `suppliers`, and `purchase_orders`).
+- **Generic Database Trigger (`fn_audit_row_change`)**: Automatically introspects primary keys, computes changed field deltas, redacts sensitive password and token values from payloads while recording changed attributes, and identifies the actor from PostgreSQL session variable `app.current_user_id` (falling back to `current_user`). No-op updates with identical values are skipped.
+- **Append-Only Immutability**: Protected by an append-only trigger (`trg_audit_log_prevent_modification`) that prohibits `UPDATE` and `DELETE` actions on `audit_log`, ensuring a tamper-resistant historical record.
+- **Restricted Access & RLS**: PostgreSQL Row-Level Security ensures only `owner` and `admin` roles can query audit logs, exposed via the authenticated and role-guarded `GET /api/audit-log` API route.
+
 ### 🧾 Consolidated Sales History (`SalesHistoryView`)
 - Historical sales transactions filtered by branch, cashier, and date with line-item detail breakdowns.
 
@@ -136,10 +143,12 @@ Dedicated technical defense console designed for academic course project evaluat
   - `trigger_deduct_stock_on_sale`: Atomically decrements `branch_inventory.quantity` on `sale_items` insertion.
   - `trigger_increment_stock_on_delivery`: Automatically increments shelf stock and closes fulfilled Purchase Orders.
   - `trigger_log_stock_movement`: Records audit rows in `stock_movements` on any inventory quantity shift.
+  - `trg_audit_<table_name>` (attached to `users`, `roles`, `branch`, `products`, `suppliers`, `purchase_orders`): Invokes `fn_audit_row_change()`, a generic `SECURITY DEFINER` function that captures entity changes, skips zero-difference updates, masks sensitive credentials, and logs the acting user.
+  - `trg_audit_log_prevent_modification`: Append-only enforcement trigger on `audit_log` that raises exceptions on any `UPDATE` or `DELETE` attempt, guaranteeing strict audit trail immutability.
 - **Stored Procedures**: Procedural logic including `sp_process_sale`, `sp_request_restock`, and `sp_approve_purchase_order` with `BEGIN / EXCEPTION / ROLLBACK` transaction atomicity.
 - **Row-Level Concurrency Locking**: `SELECT ... FOR UPDATE` row locks preventing overselling or negative inventory under simultaneous cashier checkouts.
-- **PostgreSQL Row-Level Security (RLS)**: Enforces branch isolation so branch managers and cashiers can only access records scoped to their assigned outlet.
-- **Query Optimization & Indexing**: Optimized indexes (`idx_inv_branch`, `idx_sales_branch`, `idx_mvmt_product`) eliminating sequential scans, verified via `EXPLAIN ANALYZE`.
+- **PostgreSQL Row-Level Security (RLS)**: Enforces branch isolation so branch managers and cashiers can only access records scoped to their assigned outlet, with dedicated read-only audit logging policies for administrators.
+- **Query Optimization & Indexing**: Optimized indexes (`idx_inv_branch`, `idx_sales_branch`, `idx_mvmt_product`, `idx_audit_log_table_record`, `idx_audit_log_changed_at`, `idx_audit_log_changed_by`) eliminating sequential scans, verified via `EXPLAIN ANALYZE`.
 
 ---
 
@@ -157,7 +166,6 @@ Dedicated technical defense console designed for academic course project evaluat
 The database migrations are located in the [`migrations/`](./migrations) directory:
 
 - `001_create_branch.sql` — Store outlet entities
-- `001_init_schema.sql` — Complete consolidated initial schema
 - `002_create_roles.sql` — Role definitions (`owner`, `admin`, `branch_manager`, `cashier`)
 - `003_create_users.sql` — Staff user profiles mapped to roles and branches
 - `004_create_suppliers.sql` — Footwear brand distributors
@@ -172,6 +180,9 @@ The database migrations are located in the [`migrations/`](./migrations) directo
 - `013_create_sale_items.sql` — Individual footwear sale line items
 - `014_create_stock_movements.sql` — Immutable stock audit trail
 - `015_security_rbac.sql` — PostgreSQL Row-Level Security (RLS) policies and least-privilege database roles
+- `016_audit_log.sql` — Generic row-level audit logging trigger, append-only security, and tamper-proof audit trail
+
+> **Reference Snapshot**: The consolidated full schema reference has been moved to [`migrations/snapshots/schema_snapshot.sql`](./migrations/snapshots/schema_snapshot.sql) outside the numbered migration sequence to maintain strict sequential ordering without duplication.
 
 Prisma schema mappings are maintained in [`backend/prisma/schema.prisma`](./backend/prisma/schema.prisma).
 
@@ -186,3 +197,21 @@ Apply [`migrations/015_security_rbac.sql`](./migrations/015_security_rbac.sql) w
 - Users authenticate via `POST /api/auth/login` using `{ "email": "...", "password": "..." }`, returning a signed JWT bearer token.
 - Protected API routes verify the JWT token via `authenticateUser` and check permissions with `authorizeRoles(...)`.
 
+---
+
+## Contribution Workflow
+
+This repository enforces strict Git hygiene and team collaboration standards:
+
+1. **Branch Isolation**: Direct commits and pushes to `main` are strictly prohibited. All work must be conducted on dedicated task branches branched off the latest `main`:
+   - Bug fixes: `fix/<issue-name>` (e.g., `fix/migration-numbering`)
+   - New features: `feature/<feature-name>` (e.g., `feature/audit-log-triggers`)
+   - Documentation: `docs/<docs-topic>` (e.g., `docs/update-readme`)
+2. **Pull Requests (PRs) Only**: All branches must be merged into `main` exclusively via GitHub Pull Requests after automated CI checks and code reviews pass.
+3. **Descriptive Commit Prefixes**: Every commit message must use standard conventional prefixes:
+   - `feat:` for new capabilities or schema extensions
+   - `fix:` for bug fixes and numbering resolutions
+   - `chore:` for dependency updates, schema syncs, and tooling
+   - `docs:` for documentation updates
+   - `refactor:` for code restructuring without behavioral change
+4. **Synchronization**: Always execute `git pull origin main` before branching, committing, or pushing to prevent merge conflicts.
