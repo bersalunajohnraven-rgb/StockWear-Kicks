@@ -56,7 +56,7 @@ const createProduct = async (req, res) => {
             name,
             unit_cost,
             unit_price
-        });
+        }, req.user?.userID);
 
         res.status(201).json(product);
     } catch (error) {
@@ -79,7 +79,7 @@ const updateProduct = async (req, res) => {
             name,
             unit_cost,
             unit_price
-        });
+        }, req.user?.userID);
 
         res.status(200).json(product);
     } catch (error) {
@@ -95,7 +95,7 @@ const deleteProduct = async (req, res) => {
     try {
         const { id } = req.params;
 
-        await productService.deleteProduct(id);
+        await productService.deleteProduct(id, req.user?.userID);
 
         res.status(200).json({
             message: 'Product deleted successfully'

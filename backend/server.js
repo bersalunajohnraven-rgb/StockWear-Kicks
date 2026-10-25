@@ -24,6 +24,7 @@ const saleRoutes = require('./src/routes/saleRoutes');
 const saleItemRoutes = require('./src/routes/saleItemRoutes');
 const restockRequestRoutes = require('./src/routes/restockRequestRoutes');
 const authRoutes = require('./src/routes/authRoutes');
+const auditLogRoutes = require('./src/routes/auditLogRoutes');
 
 const app = express();
 
@@ -70,6 +71,7 @@ app.use('/api/stock-movements', stockMovementRoutes);
 app.use('/api/sales', saleRoutes);
 app.use('/api/sale-items', saleItemRoutes);
 app.use('/api/restock-requests', restockRequestRoutes);
+app.use('/api/audit-log', auditLogRoutes);
 
 app.get(
     '/api/test-auth',

@@ -49,7 +49,7 @@ const createSupplier = async (req, res) => {
         const supplier = await supplierService.createSupplier({
             name,
             contact_info
-        });
+        }, req.user?.userID);
 
         res.status(201).json(supplier);
     } catch (error) {
@@ -75,7 +75,7 @@ const updateSupplier = async (req, res) => {
         const supplier = await supplierService.updateSupplier(id, {
             name,
             contact_info
-        });
+        }, req.user?.userID);
 
         res.status(200).json(supplier);
     } catch (error) {
@@ -91,7 +91,7 @@ const deleteSupplier = async (req, res) => {
     try {
         const { id } = req.params;
 
-        await supplierService.deleteSupplier(id);
+        await supplierService.deleteSupplier(id, req.user?.userID);
 
         res.status(200).json({
             message: 'Supplier deleted successfully'

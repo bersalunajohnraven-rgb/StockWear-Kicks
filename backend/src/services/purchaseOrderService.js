@@ -1,4 +1,5 @@
 const prisma = require('../db/prisma');
+const { runInAuditTransaction } = require('../db/auditTransaction');
 
 const getAllPurchaseOrders = async () => {
     return await prisma.purchase_orders.findMany({
@@ -28,64 +29,70 @@ const getPurchaseOrderById = async (orderID) => {
     });
 };
 
-const createPurchaseOrder = async (data) => {
+const createPurchaseOrder = async (data, currentUserId) => {
     const itemsData = (data.items || []).map(it => ({
         productID: it.productID,
         quantity_ordered: parseInt(it.quantity_ordered, 10),
         unit_cost: parseFloat(it.unit_cost || 0)
     }));
 
-    return await prisma.purchase_orders.create({
-        data: {
-            supplierID: data.supplierID,
-            branchID: data.branchID,
-            requestID: data.requestID || null,
-            status: data.status || 'open',
-            created_by: data.created_by,
-            ...(itemsData.length > 0 ? {
+    return await runInAuditTransaction(currentUserId, async (tx) => {
+        return await tx.purchase_orders.create({
+            data: {
+                supplierID: data.supplierID,
+                branchID: data.branchID,
+                requestID: data.requestID || null,
+                status: data.status || 'open',
+                created_by: data.created_by,
+                ...(itemsData.length > 0 ? {
+                    purchase_order_items: {
+                        create: itemsData
+                    }
+                } : {})
+            },
+            include: {
+                suppliers: true,
+                branch: true,
+                users: true,
                 purchase_order_items: {
-                    create: itemsData
-                }
-            } : {})
-        },
-        include: {
-            suppliers: true,
-            branch: true,
-            users: true,
-            purchase_order_items: {
-                include: {
-                    products: true
+                    include: {
+                        products: true
+                    }
                 }
             }
-        }
+        });
     });
 };
 
-const updatePurchaseOrder = async (orderID, data) => {
-    return await prisma.purchase_orders.update({
-        where: {
-            orderID: orderID
-        },
-        data: {
-            supplierID: data.supplierID,
-            branchID: data.branchID,
-            requestID: data.requestID || null,
-            status: data.status
-        },
-        include: {
-            suppliers: true,
-            branch: true,
-            users: true,
-            purchase_order_items: true
-        }
+const updatePurchaseOrder = async (orderID, data, currentUserId) => {
+    return await runInAuditTransaction(currentUserId, async (tx) => {
+        return await tx.purchase_orders.update({
+            where: {
+                orderID: orderID
+            },
+            data: {
+                supplierID: data.supplierID,
+                branchID: data.branchID,
+                requestID: data.requestID || null,
+                status: data.status
+            },
+            include: {
+                suppliers: true,
+                branch: true,
+                users: true,
+                purchase_order_items: true
+            }
+        });
     });
 };
 
-const deletePurchaseOrder = async (orderID) => {
-    return await prisma.purchase_orders.delete({
-        where: {
-            orderID: orderID
-        }
+const deletePurchaseOrder = async (orderID, currentUserId) => {
+    return await runInAuditTransaction(currentUserId, async (tx) => {
+        return await tx.purchase_orders.delete({
+            where: {
+                orderID: orderID
+            }
+        });
     });
 };
 
