@@ -1,4 +1,5 @@
 const prisma = require('../db/prisma');
+const { runInAuditTransaction } = require('../db/auditTransaction');
 
 const getAllBranches = async () => {
     return await prisma.branch.findMany({
@@ -16,32 +17,38 @@ const getBranchById = async (branchID) => {
     });
 };
 
-const createBranch = async (data) => {
-    return await prisma.branch.create({
-        data: {
-            name: data.name,
-            address: data.address
-        }
+const createBranch = async (data, currentUserId) => {
+    return await runInAuditTransaction(currentUserId, async (tx) => {
+        return await tx.branch.create({
+            data: {
+                name: data.name,
+                address: data.address
+            }
+        });
     });
 };
 
-const updateBranch = async (branchID, data) => {
-    return await prisma.branch.update({
-        where: {
-            branchID: branchID
-        },
-        data: {
-            name: data.name,
-            address: data.address
-        }
+const updateBranch = async (branchID, data, currentUserId) => {
+    return await runInAuditTransaction(currentUserId, async (tx) => {
+        return await tx.branch.update({
+            where: {
+                branchID: branchID
+            },
+            data: {
+                name: data.name,
+                address: data.address
+            }
+        });
     });
 };
 
-const deleteBranch = async (branchID) => {
-    return await prisma.branch.delete({
-        where: {
-            branchID: branchID
-        }
+const deleteBranch = async (branchID, currentUserId) => {
+    return await runInAuditTransaction(currentUserId, async (tx) => {
+        return await tx.branch.delete({
+            where: {
+                branchID: branchID
+            }
+        });
     });
 };
 

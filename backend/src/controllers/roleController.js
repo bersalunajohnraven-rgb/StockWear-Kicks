@@ -48,7 +48,7 @@ const createRole = async (req, res) => {
 
         const role = await roleService.createRole({
             role_name
-        });
+        }, req.user?.userID);
 
         res.status(201).json(role);
     } catch (error) {
@@ -73,7 +73,7 @@ const updateRole = async (req, res) => {
 
         const role = await roleService.updateRole(id, {
             role_name
-        });
+        }, req.user?.userID);
 
         res.status(200).json(role);
     } catch (error) {
@@ -89,7 +89,7 @@ const deleteRole = async (req, res) => {
     try {
         const { id } = req.params;
 
-        await roleService.deleteRole(id);
+        await roleService.deleteRole(id, req.user?.userID);
 
         res.status(200).json({
             message: 'Role deleted successfully'

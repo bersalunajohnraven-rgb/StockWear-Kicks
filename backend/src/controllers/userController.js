@@ -103,7 +103,7 @@ const createUser = async (req, res) => {
             password_hash,
             roleID: resolvedRoleID,
             branchID: branchID || null
-        });
+        }, req.user?.userID);
 
         res.status(201).json({
             ...user,
@@ -173,7 +173,7 @@ const updateUser = async (req, res) => {
             ...(password_hash !== undefined ? { password_hash } : {}),
             ...(resolvedRoleID !== undefined ? { roleID: resolvedRoleID } : {}),
             branchID: branchID !== undefined ? (branchID || null) : undefined
-        });
+        }, req.user?.userID);
 
         res.status(200).json({
             ...user,
@@ -195,7 +195,7 @@ const deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
 
-        await userService.deleteUser(id);
+        await userService.deleteUser(id, req.user?.userID);
 
         res.status(200).json({
             message: 'User deleted successfully'

@@ -49,7 +49,7 @@ const createBranch = async (req, res) => {
         const branch = await branchService.createBranch({
             name,
             address
-        });
+        }, req.user?.userID);
 
         res.status(201).json(branch);
     } catch (error) {
@@ -69,7 +69,7 @@ const updateBranch = async (req, res) => {
         const branch = await branchService.updateBranch(id, {
             name,
             address
-        });
+        }, req.user?.userID);
 
         res.status(200).json(branch);
     } catch (error) {
@@ -85,7 +85,7 @@ const deleteBranch = async (req, res) => {
     try {
         const { id } = req.params;
 
-        await branchService.deleteBranch(id);
+        await branchService.deleteBranch(id, req.user?.userID);
 
         res.status(200).json({
             message: 'Branch deleted successfully'

@@ -58,7 +58,7 @@ const createPurchaseOrder = async (req, res) => {
             requestID,
             status,
             created_by
-        });
+        }, req.user?.userID);
 
         res.status(201).json(order);
     } catch (error) {
@@ -86,7 +86,7 @@ const updatePurchaseOrder = async (req, res) => {
             branchID,
             requestID,
             status
-        });
+        }, req.user?.userID);
 
         res.status(200).json(order);
     } catch (error) {
@@ -102,7 +102,7 @@ const deletePurchaseOrder = async (req, res) => {
     try {
         const { id } = req.params;
 
-        await purchaseOrderService.deletePurchaseOrder(id);
+        await purchaseOrderService.deletePurchaseOrder(id, req.user?.userID);
 
         res.status(200).json({
             message: 'Purchase order deleted successfully'

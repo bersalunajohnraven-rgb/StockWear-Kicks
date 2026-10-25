@@ -1,4 +1,5 @@
 const prisma = require('../db/prisma');
+const { runInAuditTransaction } = require('../db/auditTransaction');
 
 const getAllSuppliers = async () => {
     return await prisma.suppliers.findMany({
@@ -16,32 +17,38 @@ const getSupplierById = async (supplierID) => {
     });
 };
 
-const createSupplier = async (data) => {
-    return await prisma.suppliers.create({
-        data: {
-            name: data.name,
-            contact_info: data.contact_info
-        }
+const createSupplier = async (data, currentUserId) => {
+    return await runInAuditTransaction(currentUserId, async (tx) => {
+        return await tx.suppliers.create({
+            data: {
+                name: data.name,
+                contact_info: data.contact_info
+            }
+        });
     });
 };
 
-const updateSupplier = async (supplierID, data) => {
-    return await prisma.suppliers.update({
-        where: {
-            supplierID: supplierID
-        },
-        data: {
-            name: data.name,
-            contact_info: data.contact_info
-        }
+const updateSupplier = async (supplierID, data, currentUserId) => {
+    return await runInAuditTransaction(currentUserId, async (tx) => {
+        return await tx.suppliers.update({
+            where: {
+                supplierID: supplierID
+            },
+            data: {
+                name: data.name,
+                contact_info: data.contact_info
+            }
+        });
     });
 };
 
-const deleteSupplier = async (supplierID) => {
-    return await prisma.suppliers.delete({
-        where: {
-            supplierID: supplierID
-        }
+const deleteSupplier = async (supplierID, currentUserId) => {
+    return await runInAuditTransaction(currentUserId, async (tx) => {
+        return await tx.suppliers.delete({
+            where: {
+                supplierID: supplierID
+            }
+        });
     });
 };
 

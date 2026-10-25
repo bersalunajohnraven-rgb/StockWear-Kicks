@@ -29,9 +29,10 @@ const prisma = basePrisma.$extends({
                 }
 
                 return basePrisma.$transaction(async (transaction) => {
-                    await transaction.$queryRaw`
+                    await transaction.$executeRaw`
                         SELECT
                             set_config('app.user_id', ${context.userID}, true),
+                            set_config('app.current_user_id', ${context.userID}, true),
                             set_config('app.role', ${context.roleName}, true),
                             set_config('app.branch_id', ${context.branchID || ''}, true)
                     `;

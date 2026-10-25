@@ -1,4 +1,5 @@
 const prisma = require('../db/prisma');
+const { runInAuditTransaction } = require('../db/auditTransaction');
 
 const getAllRoles = async () => {
     return await prisma.roles.findMany({
@@ -16,30 +17,36 @@ const getRoleById = async (roleID) => {
     });
 };
 
-const createRole = async (data) => {
-    return await prisma.roles.create({
-        data: {
-            role_name: data.role_name
-        }
+const createRole = async (data, currentUserId) => {
+    return await runInAuditTransaction(currentUserId, async (tx) => {
+        return await tx.roles.create({
+            data: {
+                role_name: data.role_name
+            }
+        });
     });
 };
 
-const updateRole = async (roleID, data) => {
-    return await prisma.roles.update({
-        where: {
-            roleID: roleID
-        },
-        data: {
-            role_name: data.role_name
-        }
+const updateRole = async (roleID, data, currentUserId) => {
+    return await runInAuditTransaction(currentUserId, async (tx) => {
+        return await tx.roles.update({
+            where: {
+                roleID: roleID
+            },
+            data: {
+                role_name: data.role_name
+            }
+        });
     });
 };
 
-const deleteRole = async (roleID) => {
-    return await prisma.roles.delete({
-        where: {
-            roleID: roleID
-        }
+const deleteRole = async (roleID, currentUserId) => {
+    return await runInAuditTransaction(currentUserId, async (tx) => {
+        return await tx.roles.delete({
+            where: {
+                roleID: roleID
+            }
+        });
     });
 };
 
