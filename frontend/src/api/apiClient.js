@@ -103,6 +103,34 @@ export const apiClient = {
     return true;
   },
 
+  // USERS / STAFF
+  getUsers: async () => {
+    const list = await apiRequest('/api/users');
+    return Array.isArray(list) ? list : [];
+  },
+
+  createUser: async (userData) => {
+    return await apiRequest('/api/users', {
+      method: 'POST',
+      body: userData
+    });
+  },
+
+  updateUser: async (userData) => {
+    const id = userData.userID;
+    return await apiRequest(`/api/users/${id}`, {
+      method: 'PUT',
+      body: userData
+    });
+  },
+
+  deleteUser: async (userID) => {
+    await apiRequest(`/api/users/${userID}`, {
+      method: 'DELETE'
+    });
+    return true;
+  },
+
   // 3. PRODUCTS
   getProducts: async () => {
     const products = await apiRequest('/api/products');

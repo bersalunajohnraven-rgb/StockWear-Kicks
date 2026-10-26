@@ -46,20 +46,21 @@ const createUser = async (data, currentUserId) => {
 };
 
 const updateUser = async (userID, data, currentUserId) => {
+    const updateData = {};
+    if (data.firstName !== undefined) updateData.firstName = data.firstName;
+    if (data.middleName !== undefined) updateData.middleName = data.middleName;
+    if (data.lastName !== undefined) updateData.lastName = data.lastName;
+    if (data.email !== undefined) updateData.email = data.email;
+    if (data.password_hash !== undefined && data.password_hash !== '') updateData.password_hash = data.password_hash;
+    if (data.roleID !== undefined) updateData.roleID = data.roleID;
+    if (data.branchID !== undefined) updateData.branchID = data.branchID || null;
+
     return await runInAuditTransaction(currentUserId, async (tx) => {
         return await tx.users.update({
             where: {
                 userID: userID
             },
-            data: {
-                firstName: data.firstName,
-                middleName: data.middleName,
-                lastName: data.lastName,
-                email: data.email,
-                password_hash: data.password_hash,
-                roleID: data.roleID,
-                branchID: data.branchID || null
-            },
+            data: updateData,
             include: {
                 roles: true,
                 branch: true

@@ -195,16 +195,28 @@ const deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
 
+        if (id === req.user?.userID) {
+            return res.status(400).json({
+                message: 'Cannot delete your own active account'
+            });
+        }
+
         await userService.deleteUser(id, req.user?.userID);
 
         res.status(200).json({
             message: 'User deleted successfully'
         });
     } catch (error) {
-        console.error(error);
+        console.error('Delete user error:', error);
+
+        if (error.code === 'P2003' || error.message?.includes('foreign key constraint')) {
+            return res.status(409).json({
+                message: 'Cannot delete this user because they have recorded sales, orders, deliveries, or stock movements. User records must be preserved for financial audit trail integrity.'
+            });
+        }
 
         res.status(500).json({
-            message: 'Failed to delete user'
+            message: error.message || 'Failed to delete user'
         });
     }
 };
