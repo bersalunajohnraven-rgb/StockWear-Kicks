@@ -7,6 +7,11 @@ const globalForPrisma = globalThis;
 const basePrisma =
     globalForPrisma.prismaInstance ||
     new PrismaClient({
+        datasources: process.env.DATABASE_URL ? {
+            db: {
+                url: process.env.DATABASE_URL
+            }
+        } : undefined,
         omit: {
             users: {
                 password_hash: true
