@@ -40,16 +40,17 @@ const createInventory = async (data) => {
 };
 
 const updateInventory = async (inventoryID, data) => {
+    const updateData = {};
+    if (data.productID !== undefined) updateData.productID = data.productID;
+    if (data.branchID !== undefined) updateData.branchID = data.branchID;
+    if (data.quantity !== undefined) updateData.quantity = Number(data.quantity);
+    if (data.reorder_threshold !== undefined) updateData.reorder_threshold = Number(data.reorder_threshold);
+
     return await prisma.inventory.update({
         where: {
             inventoryID: inventoryID
         },
-        data: {
-            productID: data.productID,
-            branchID: data.branchID,
-            quantity: data.quantity,
-            reorder_threshold: data.reorder_threshold
-        },
+        data: updateData,
         include: {
             products: true,
             branch: true
