@@ -17,7 +17,6 @@ import { AuditTrailView } from './views/AuditTrailView';
 import { BranchesView } from './views/BranchesView';
 import { StaffView } from './views/StaffView';
 import { SuppliersView } from './views/SuppliersView';
-import { DatabaseDefenseView } from './views/DatabaseDefenseView';
 
 // ─── Login Screen (Footwear & Sneaker Retail) ──────────────────────────────
 const LoginScreen = () => {
@@ -498,8 +497,6 @@ const AppShell = () => {
             onDeleteSupplier={handleDeleteSupplier}
           />
         );
-      case 'database-defense':
-        return <DatabaseDefenseView />;
       case 'audit-trail':
         return (
           <AuditTrailView

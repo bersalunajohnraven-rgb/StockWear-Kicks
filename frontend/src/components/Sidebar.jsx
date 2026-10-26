@@ -11,8 +11,7 @@ import {
   History, 
   ArrowDownToLine,
   CreditCard,
-  Factory,
-  Shield
+  Factory
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -33,8 +32,7 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
         { id: 'sales-history', label: 'Consolidated Sales', icon: ShoppingCart },
         { id: 'branches', label: 'Footwear Outlets', icon: Building2 },
         { id: 'staff', label: 'Staff Accounts & Roles', icon: Users },
-        { id: 'audit-trail', label: 'Stock Movements (Audit)', icon: History },
-        { id: 'database-defense', label: 'DB Engineering Defense', icon: Shield }
+        { id: 'audit-trail', label: 'Stock Movements (Audit)', icon: History }
       ];
     }
 
