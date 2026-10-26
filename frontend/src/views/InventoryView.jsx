@@ -31,6 +31,8 @@ export const InventoryView = ({
   const [adjustReason, setAdjustReason] = useState('manual_adjustment');
   const [thresholdItem, setThresholdItem] = useState(null);
   const [newThreshold, setNewThreshold] = useState('');
+  const [isSubmittingThreshold, setIsSubmittingThreshold] = useState(false);
+  const [thresholdError, setThresholdError] = useState(null);
 
   const isOwnerOrAdmin = currentUser?.role_name === 'owner' || currentUser?.role_name === 'admin';
   const isCashier = currentUser?.role_name === 'cashier';
@@ -61,20 +63,39 @@ export const InventoryView = ({
     const delta = parseInt(adjustDelta, 10);
     if (isNaN(delta) || delta === 0) return;
 
-    await onAdjustStock(adjustingItem.inventoryID, delta, adjustReason);
-    setAdjustingItem(null);
-    setAdjustDelta('');
+    try {
+      const adjustFn = onAdjustStock || onManualAdjustment;
+      if (typeof adjustFn === 'function') {
+        await adjustFn(adjustingItem.inventoryID, delta, adjustReason);
+      }
+      setAdjustingItem(null);
+      setAdjustDelta('');
+    } catch (err) {
+      console.error('Failed to adjust stock:', err);
+    }
   };
 
   const handleThresholdSubmit = async (e) => {
     e.preventDefault();
-    if (!thresholdItem || !newThreshold) return;
+    if (!thresholdItem || newThreshold === '') return;
     const thresh = parseInt(newThreshold, 10);
     if (isNaN(thresh) || thresh < 0) return;
 
-    await onUpdateThreshold(thresholdItem.inventoryID, thresh);
-    setThresholdItem(null);
-    setNewThreshold('');
+    try {
+      setIsSubmittingThreshold(true);
+      setThresholdError(null);
+      const updateFn = onUpdateThreshold;
+      if (typeof updateFn === 'function') {
+        await updateFn(thresholdItem.inventoryID, thresh);
+      }
+      setThresholdItem(null);
+      setNewThreshold('');
+    } catch (err) {
+      console.error('Failed to update threshold:', err);
+      setThresholdError(err.message || 'Failed to update threshold');
+    } finally {
+      setIsSubmittingThreshold(false);
+    }
   };
 
   return (
@@ -326,11 +347,21 @@ export const InventoryView = ({
       {thresholdItem && (
         <Modal
           isOpen={true}
-          onClose={() => setThresholdItem(null)}
+          onClose={() => {
+            if (!isSubmittingThreshold) {
+              setThresholdItem(null);
+              setThresholdError(null);
+            }
+          }}
           title={`Configure Trigger Threshold`}
           subtitle={`Product: ${thresholdItem.product?.name} at ${thresholdItem.branch?.name}`}
         >
           <form onSubmit={handleThresholdSubmit} className="space-y-4 text-xs">
+            {thresholdError && (
+              <div className="rounded-xl bg-rose-950/60 border border-rose-800/80 p-3 text-rose-300 font-mono text-[11px]">
+                {thresholdError}
+              </div>
+            )}
             <div>
               <label className="block text-slate-400 mb-1 font-medium">
                 Minimum Reorder Threshold (Units)
@@ -339,9 +370,10 @@ export const InventoryView = ({
                 type="number"
                 min="0"
                 required
+                disabled={isSubmittingThreshold}
                 value={newThreshold}
                 onChange={(e) => setNewThreshold(e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-mono text-white focus:border-indigo-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-mono text-white focus:border-indigo-500 focus:outline-none disabled:opacity-50"
               />
               <p className="mt-1 text-[11px] text-slate-500">
                 Whenever physical branch stock drops to or below this number, the database trigger automatically flags a restock request.
@@ -351,16 +383,21 @@ export const InventoryView = ({
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => setThresholdItem(null)}
-                className="rounded-xl border border-slate-700 px-4 py-2 font-medium text-slate-300 hover:bg-slate-800"
+                disabled={isSubmittingThreshold}
+                onClick={() => {
+                  setThresholdItem(null);
+                  setThresholdError(null);
+                }}
+                className="rounded-xl border border-slate-700 px-4 py-2 font-medium text-slate-300 hover:bg-slate-800 disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="rounded-xl bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-500 shadow-md"
+                disabled={isSubmittingThreshold}
+                className="rounded-xl bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-500 shadow-md disabled:opacity-50 flex items-center gap-1.5"
               >
-                Save Threshold
+                {isSubmittingThreshold ? 'Saving...' : 'Save Threshold'}
               </button>
             </div>
           </form>

@@ -317,6 +317,20 @@ const AppShell = () => {
     await loadData();
   };
 
+  const handleUpdateThreshold = async (inventoryID, newThreshold) => {
+    await apiClient.updateInventoryThreshold(inventoryID, newThreshold);
+    await loadData();
+  };
+
+  const handleAdjustStock = async (inventoryID, delta, reason) => {
+    if (typeof inventoryID === 'object') {
+      await apiClient.manualAdjustment(inventoryID, currentUser);
+    } else {
+      await apiClient.adjustInventoryQuantity(inventoryID, delta, reason, currentUser);
+    }
+    await loadData();
+  };
+
   const handleManualAdj = async (adjData) => {
     await apiClient.manualAdjustment(adjData, currentUser);
     await loadData();
@@ -399,7 +413,9 @@ const AppShell = () => {
             inventory={inventory}
             products={products}
             branches={branches}
-            onManualAdjustment={handleManualAdj}
+            onAdjustStock={handleAdjustStock}
+            onUpdateThreshold={handleUpdateThreshold}
+            onManualAdjustment={handleAdjustStock}
           />
         );
       case 'products':
