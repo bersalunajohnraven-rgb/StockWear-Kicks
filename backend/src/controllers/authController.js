@@ -37,7 +37,18 @@ const login = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Login error:', error);
+        console.error('[AUTH LOGIN ERROR]', {
+            message: error?.message,
+            name: error?.name,
+            code: error?.code,
+            stack: error?.stack,
+            envCheck: {
+                hasDatabaseUrl: Boolean(process.env.DATABASE_URL),
+                hasAuthDatabaseUrl: Boolean(process.env.AUTH_DATABASE_URL),
+                hasJwtSecret: Boolean(process.env.JWT_SECRET),
+                nodeEnv: process.env.NODE_ENV
+            }
+        });
 
         return res.status(500).json({
             message: 'Login is unavailable'
